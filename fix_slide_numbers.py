@@ -62,6 +62,39 @@ def renumber_slides(content, x_position, total_slides):
     return result, new_total
 
 
+def update_html_comments(content, x_position):
+    """Update HTML comments like <!-- Slide 6: ... --> or <!-- Slide x: ... -->."""
+    # Pattern for comments like "<!-- Slide 6: Title -->" or "<!-- Slide x: Title -->"
+    pattern = r'<!-- Slide (\w+):(.*?)-->'
+    matches = list(re.finditer(pattern, content))
+    
+    replacements = []
+    
+    for match in matches:
+        slide_num = match.group(1)
+        title_part = match.group(2)
+        
+        if slide_num == 'x':
+            # Replace 'x' with the actual position number
+            new_comment = f'<!-- Slide {x_position}:{title_part}-->'
+            replacements.append((match.span(), new_comment))
+        elif slide_num.isdigit():
+            old_num = int(slide_num)
+            if old_num >= x_position:
+                # Increment slide numbers that come after x
+                new_num = old_num + 1
+                new_comment = f'<!-- Slide {new_num}:{title_part}-->'
+                replacements.append((match.span(), new_comment))
+    
+    # Apply replacements in reverse order
+    result = content
+    for span, new_value in reversed(sorted(replacements, key=lambda x: x[0][0])):
+        result = result[:span[0]] + new_value + result[span[1]:]
+    
+    logger.info(f"Updated {len(replacements)} HTML comment slide numbers")
+    return result
+
+
 def update_slide_numbers_display(content, x_position, new_total):
     """Update slide number displays like '5 / 23' or 'x'."""
     # Pattern for standard format: "5 / 23"
@@ -131,6 +164,9 @@ def fix_slide_numbers(filepath):
     
     # Renumber data-slide attributes
     content, new_total = renumber_slides(content, x_position, total_slides)
+    
+    # Update HTML comments
+    content = update_html_comments(content, x_position)
     
     # Update slide number displays
     content = update_slide_numbers_display(content, x_position, new_total)
