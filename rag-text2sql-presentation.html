@@ -108,6 +108,7 @@
             flex-direction: column;
             justify-content: center;
             gap: 2rem;
+            overflow-y: auto;
         }
 
         .bullet-list {
@@ -208,7 +209,7 @@
             width: 100%;
             border-collapse: collapse;
             font-family: var(--font-mono);
-            font-size: 1.15rem;
+            font-size: 1.55rem;
         }
 
         th {
@@ -384,13 +385,13 @@
         }
 
         .bar-label {
-            min-width: 150px;
+            min-width: 230px;
             font-family: var(--font-mono);
-            font-size: 1.2rem;
+            font-size: 1.5rem;
         }
 
         .bar {
-            height: 45px;
+            height: 60px;
             background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
             border-radius: 4px;
             position: relative;
@@ -1373,7 +1374,7 @@ Attempt 3: ✅ Success!</div>
                 <div class="chart-container">
                     <div class="bar-chart">
                         <div class="bar-row">
-                            <div class="bar-label">Basic Queries</div>
+                            <div class="bar-label">Basic</div>
                             <div class="bar" style="width: 99.39%; background: linear-gradient(90deg, var(--color-accent), #32ff7e);">
                                 <div class="bar-value">99.39% Recall → 98.44% Success</div>
                             </div>
