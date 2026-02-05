@@ -1,0 +1,140 @@
+# Schema Enrichment Prompt Templates
+# Version: 1.0
+# Description: Prompts for database schema enrichment pipeline
+
+# Domain Detection Prompt
+domain_detection:
+  name: domain_detection
+  version: "1.0"
+  description: "Detect business domain from database table names"
+  template: |
+    Analyze these database table names and determine the business domain.
+
+    Table Names:
+    {table_list}
+
+    Respond with at least 2 - 5 words or short phrases for the domain.
+    Examples: Retail CRM, E-commerce, Healthcare Service, Car Rental, Hotel Booking, etc.
+
+    Domain:
+  variables:
+    - table_list
+
+# Global Relationship Map Prompt
+global_map:
+  name: global_map
+  version: "1.0"
+  description: "Identify all logical relationships between database tables"
+  template: |
+    You are a Senior Data Architect for a {domain} system.
+
+    DATABASE SCHEMA:
+    {schema}
+
+    CONFIRMED FOREIGN KEYS (trust these completely):
+    {hard_fks}
+
+    TASK: Identify ALL logical relationships between tables, including:
+    1. The confirmed FKs above (type: "FK", confidence: "High")
+    2. Inferred relationships based on naming patterns (type: "Inference")
+       - Common patterns: user_id → users, created_by → users, category_id → categories
+    3. Polymorphic relationships (type: "Polymorphic")
+       - entity_type + entity_id columns pointing to multiple tables
+
+    For each relationship provide:
+    - source_table, source_column, target_table, target_column
+    - type: "FK" | "Inference" | "Polymorphic"
+    - confidence: "High" | "Medium" | "Low"
+
+    OUTPUT FORMAT: JSON array of relationship objects.
+    [
+      {{
+        "source_table": "orders",
+        "source_column": "customer_id",
+        "target_table": "customers",
+        "target_column": "id",
+        "type": "FK",
+        "confidence": "High"
+      }}
+    ]
+
+    Return ONLY valid JSON array. No markdown, no explanation.
+  variables:
+    - domain
+    - schema
+    - hard_fks
+
+# Table Enrichment Prompt
+table_enrichment:
+  name: table_enrichment
+  version: "1.1"
+  description: "Generate semantic metadata for a single database table"
+  template: |
+    You are enriching the table "{table_name}" for a {domain} system.
+
+    TABLE STRUCTURE:
+    {columns}
+
+    Note: Each column may include "sample_values" - an array of up to 10 real non-null values from the database.
+    Use these sample values to better understand what data each column contains and generate more accurate descriptions.
+
+    KNOWN RELATIONSHIPS:
+    {relationships}
+
+    ROW COUNT: {row_count}
+
+    TASKS:
+    1. Write a clear business-level description of this table's purpose.
+       IMPORTANT: The description MUST be at least 30 characters long and provide meaningful context.
+       Be specific about what business entities or processes this table supports.
+    2. For each column:
+       - Provide a human-readable description. Use the sample_values (if provided) to infer the column's purpose.
+       - Note if it's a primary key or nullable
+       - Generate a list of 3-5 "tags" which are synonyms or alternative terms for this specific column.
+         (e.g., if column is 'gender', include 'sexual', 'sex'. If column is 'Region', include 'Nation', 'Country').
+         DO NOT generate ambigous tags like id, identifier, record_id, unique_id, etc.
+         These tags help users find this table when they use different terminology.
+    3. Confirm/refine the relationships
+
+    OUTPUT: Valid JSON matching this exact schema:
+    {{
+      "table_name": "{table_name}",
+      "semantic_description": "...",
+      "columns": [{{
+        "name": "column_name",
+        "data_type": "varchar",
+        "description": "Human readable description",
+        "is_nullable": true,
+        "is_primary_key": false,
+        "tags": ["synonym1", "synonym2"]
+      }}],
+      "relationships": [{{
+        "source_column": "user_id",
+        "target_table": "users",
+        "target_column": "id",
+        "type": "FK",
+        "confidence": "High",
+        "reasoning": "Direct foreign key constraint"
+      }}],
+      "row_count_estimate": {row_count},
+      "enrichment_version": "1.0"
+    }}
+
+    Return ONLY valid JSON. No markdown formatting or explanation.
+  variables:
+    - table_name
+    - domain
+    - columns
+    - relationships
+    - row_count
+
+# Error Messages
+sql_extraction_error: |
+  I apologize, but I was unable to extract a valid SQL query from my response. 
+  Please try rephrasing your question, and I'll generate a proper query.
+
+sql_execution_max_retries_error: |
+  I apologize, but I was unable to execute a valid SQL query after multiple attempts.
+  The last error was: {error_message}
+
+  Please try rephrasing your question or provide more specific details about what data you're looking for.

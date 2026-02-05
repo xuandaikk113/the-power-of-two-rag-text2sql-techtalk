@@ -1,0 +1,95 @@
+# SQL Healing/Retry Prompt Template
+# Version: 1.1
+# Description: Corrects failed SQL queries based on error messages
+# Note: Uses shared sections from _sql_shared.yaml via {_shared.key} syntax
+
+name: sql_healing
+version: "1.1"
+description: "Fix SQL queries that failed execution based on error messages"
+
+template: |
+  The previous SQL query failed with an error. Please analyze the error and generate a corrected SQL query.
+
+  {_shared.db_engine}
+
+  Database Schema:
+  {db_schema}
+
+  Original Question:
+  {question}
+
+  Failed SQL Query:
+  ```sql
+  {failed_sql}
+  ```
+
+  Error Message:
+  {error_message}
+
+  ERROR DIAGNOSIS AND RESOLUTION:
+
+  SCHEMA/OBJECT ERRORS:
+  - "Invalid object name 'X'" where X has no dot → Missing schema prefix. Look up the correct schema in the provided schema and use Schema.X
+  - "Invalid object name 'X'" where X is also a schema name → Table name equals schema name. Use X.X (e.g., Person.Person)
+  - "Invalid object name" in general → Verify the table exists in the schema. Check for typos. Ensure correct schema prefix.
+
+  COLUMN ERRORS:
+  - "Invalid column name 'X'" → Column doesn't exist in that table. Check the schema for the correct column name. Common variations: Quantity/OrderQty/Qty, ID/Id/[Table]ID
+  - "Invalid column name" after JOIN → The column may be in a different table than you're referencing. Verify which table contains it.
+  - "Ambiguous column name 'X'" → Column exists in multiple joined tables. Add table alias prefix: `alias.X`
+
+  ALIAS/REFERENCE ERRORS:
+  - "multi-part identifier 'X.Y' could not be bound" → The alias 'X' is not defined or the table is not in FROM/JOIN. Ensure the table appears with that alias before referencing it.
+  - "The column prefix 'X' does not match" → Wrong alias used. Check your FROM/JOIN clause for correct aliases.
+
+  SYNTAX ERRORS:
+  - "Incorrect syntax near 'LIMIT'" → LIMIT is not T-SQL. Use SELECT TOP N or OFFSET/FETCH.
+  - "Incorrect syntax near '|'" → || is not T-SQL string concatenation. Use + or CONCAT().
+  - "Incorrect syntax near keyword 'X'" where X is Group/Order/Key/User → Reserved keyword used as identifier. Wrap in brackets: [X]
+  - "Incorrect syntax near 'RECURSIVE'" → Remove RECURSIVE. T-SQL CTEs don't use this keyword.
+
+  FUNCTION/OPERATOR ERRORS:
+  - "Invalid parameter for datepart" or "Incorrect syntax near datepart" → DATEPART parameters are unquoted keywords: DATEPART(year, col) not DATEPART('year', col)
+  - "Divide by zero" → Wrap divisor in NULLIF(divisor, 0) to return NULL instead of error.
+  - "Invalid floating point operation" → Usually LOG(0) or similar. Filter out zero/negative values first.
+  - "Cannot find column/function 'STDEV.S'" → Use STDEV() or STDEVP(), not Excel-style STDEV.S() or STDEV.P()
+
+  TYPE CONVERSION ERRORS:
+  - "Conversion failed when converting" → Data types don't match. Use explicit CAST() or CONVERT().
+  - "Arithmetic overflow" → Result exceeds data type range. Cast to larger type: CAST(x AS BIGINT)
+  - "Argument data type xml is invalid for LIKE" → XML columns cannot use LIKE. Use .value() or .exist() XQuery methods, or query a different column.
+
+  CTE/RECURSION ERRORS:
+  - "GROUP BY/HAVING/aggregate not allowed in recursive part" → Move aggregation outside the recursive CTE or restructure the query.
+  - "Types don't match between anchor and recursive" → Ensure SELECT columns in both parts have matching types.
+
+  GENERAL APPROACH:
+  1. Read the error message carefully - it usually tells you exactly what's wrong
+  2. Check the schema to verify table and column names
+  3. Verify all table aliases are defined before use
+  4. Ensure T-SQL syntax (not MySQL/PostgreSQL/Oracle syntax)
+
+  {_shared.syntax_specifics}
+
+  {_shared.query_construction_rules}
+
+  Instructions:
+  - Analyze the error message carefully to understand what went wrong.
+  - Fix the SQL query to address the error.
+  - Ensure the query is valid MS SQL Server syntax.
+  - Make sure the query still answers the original question.
+  {_shared.pk_instruction}
+
+  Output Format:
+  In your answer, please enclose the corrected SQL query in a code block:
+  ```sql
+  -- Your corrected SQL query
+  ```
+
+  {_shared.thinking_steps}
+
+variables:
+  - db_schema
+  - question
+  - failed_sql
+  - error_message

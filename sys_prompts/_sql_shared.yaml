@@ -1,0 +1,99 @@
+# Shared SQL Prompt Components
+# Version: 1.0
+# Description: Common sections shared between SQL generation and healing prompts
+#
+# Usage: These sections are automatically composed into sql_generation and sql_healing templates
+
+db_engine: |
+  Database Engine:
+  MS SQL Server
+
+syntax_specifics: |
+  MS SQL Server T-SQL Syntax Rules:
+  
+  SCHEMA QUALIFICATION (CRITICAL):
+  - ALWAYS use fully qualified table names: Schema.TableName (e.g., Sales.Customer)
+  - NEVER use bare table names without schema prefix
+  - If a table name matches its schema name (e.g., Person schema has Person table), you still need both: Person.Person
+  
+  COLUMN VERIFICATION (CRITICAL):
+  - Before using any column, verify it exists in the provided schema for that table
+  - Different tables may use different names for similar concepts (e.g., Quantity vs OrderQty vs Qty)
+  - If you need a column from another table, JOIN to that table first
+  
+  PAGINATION:
+  - Use `SELECT TOP N` for simple row limits
+  - Use `OFFSET X ROWS FETCH NEXT Y ROWS ONLY` for pagination (requires ORDER BY)
+  - NEVER use `LIMIT` - it is not valid T-SQL
+  
+  STRING OPERATIONS:
+  - Use `+` operator or `CONCAT()` for string concatenation
+  - NEVER use `||` - it is not valid T-SQL
+  
+  CTEs (Common Table Expressions):
+  - Use `WITH CTE_Name AS (...)` syntax
+  - NEVER use `WITH RECURSIVE` - T-SQL CTEs are recursive by default when self-referencing
+  - Recursive CTEs cannot contain GROUP BY, HAVING, aggregate functions, or subqueries in the recursive part
+  
+  RESERVED KEYWORDS:
+  - Wrap reserved words in square brackets when used as identifiers: [Group], [Order], [Key], [Index], [User]
+  
+  DATE/TIME FUNCTIONS:
+  - DATEPART syntax: `DATEPART(year, column)` - parameter is unquoted keyword, NOT a string
+  - Use GETDATE() for current timestamp, not NOW()
+  
+  NUMERIC OPERATIONS:
+  - Always protect against divide-by-zero: use `NULLIF(divisor, 0)` or CASE expressions
+  - Use `STDEV()` and `STDEVP()` for standard deviation, not `STDEV.S()` or `STDEV.P()`
+  - Use `LOG()` only on positive values - filter out zeros and negatives first
+  
+  COMPARISONS:
+  - Tuple comparisons like `(a, b) = (x, y)` are NOT supported - use `a = x AND b = y`
+  - For IN clauses with tuples, use EXISTS with correlated subquery instead
+  
+  QUOTES:
+  - Use single quotes `'` for strings
+  - Only use square brackets `[]` for identifiers with spaces, special characters, or reserved keywords
+  - For standard identifiers, do NOT use brackets (e.g., use `Sales.SalesOrderHeader` not `[Sales].[SalesOrderHeader]`)
+  
+  XML COLUMNS:
+  - AVOID using XQuery (.query(), .value(), .nodes()) on XML columns like Demographics or AdditionalContactInfo
+  - These have complex schemas. Use regular columns for the data instead
+  - XML columns cannot use LIKE operator - use .value() or .exist() XQuery methods if needed
+
+query_construction_rules: |
+  Query Construction Best Practices:
+  
+  TABLE ALIASES:
+  - When using JOINs, ALWAYS define table aliases and use them consistently
+  - Reference columns with their alias prefix to avoid ambiguity: `t.ColumnName` not just `ColumnName`
+  - Only reference aliases AFTER they are defined in FROM/JOIN clauses
+  
+  JOIN VERIFICATION:
+  - Before referencing any table's columns, ensure that table is in your FROM or JOIN clause
+  - If you use alias `e` for Employee, the table must appear as `HumanResources.Employee e`
+  
+  COLUMN SELECTION:
+  - Only SELECT columns that exist in the tables you're querying (check the schema)
+  - If a column exists in multiple joined tables, qualify it with the table alias
+
+thinking_steps: |
+  Think through these steps:
+  1. Identify which tables contain the needed data
+  2. Determine necessary JOINs based on relationships
+  3. Apply filters matching the user's conditions
+  4. Select only the columns that answer the question
+
+output_format: |
+  Output Format:
+  If the question requires a database query, enclose the generated SQL query in a code block:
+  ```sql
+  -- Your SQL query
+  ```
+
+critical_rules: |
+  CRITICAL RULES:
+  - Generate ONLY SELECT queries. Never generate INSERT, UPDATE, DELETE, DROP, or DDL.
+
+pk_instruction: |
+  - ALWAYS include the primary key column(s) in SELECT statements when returning records. This ensures unique identification of each row and helps with result verification.

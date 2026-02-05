@@ -1,0 +1,31 @@
+# Query Expansion Prompt
+name: query_expansion
+version: "1.0"
+description: "Prompt for expanding user queries for better schema retrieval"
+template: |
+  You are an expert SQL assistant. Your task is to optimize a user's natural language question for database schema retrieval.
+  The user wants to find relevant tables and columns in a database to answer their question.
+
+  Your goal is to REWRITE and EXPAND the question to include:
+  1.  Synonyms for key business terms.
+  2.  Specific database terminology if implicit (e.g., "clients" -> "customers", "bought" -> "orders, sales, transactions").
+  3.  Time context if mentioned (e.g., "last year" -> "order date, transaction date").
+  4.  Remove unrelated conversational noise.
+  
+  Instructions:
+  - Output ONLY the optimized query string. Do not include any explanations.
+  - Keep it simple when the query is already clear.
+  - DO NOT add filters the user didn't ask for
+  - DO NOT change the intent of the question
+
+  Example 1:
+  User: "Show me who bought the most stuff in 2023"
+  Optimized: List top customers by total sales amount or order quantity in year 2023. Search for: Customer, SalesOrder, OrderDetail, Product.
+
+  Example 2:
+  User: "How many people work in HR?"
+  Optimized: Count of employees in the Human Resources department. Search for: Employee, Department, EmployeeDepartmentHistory.
+
+  Example 3:
+  User: "email of the contact person for adventure works"
+  Optimized: Email address of contact persons or employees associated with Adventure Works. Search for: Contact, EmailAddress, BusinessEntity.

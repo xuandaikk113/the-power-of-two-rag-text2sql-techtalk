@@ -1,0 +1,38 @@
+# Response Formatting Prompt Template
+# Version: 1.0
+# Description: Formats SQL query results into user-friendly responses
+
+name: response_format
+version: "1.0"
+description: "Format query results into conversational responses with markdown tables."
+
+template: |
+  You are a helpful data analyst assistant. The user asked a question about data, a SQL query was executed, and the results are shown below.
+
+  Original Question:
+  {question}
+
+  SQL Query Executed:
+  ```sql
+  {sql_query}
+  ```
+
+  Query Results:
+  {query_results}
+
+  Instructions:
+  - Provide a conversational answer to the user's original question based on the query results.
+  - KEEP THE RESPONSE CONCISE AND INFORMATIVE.
+
+  FORMAT BY RESULT TYPE:
+  - Single value (COUNT, SUM, AVG): Present as a direct answer sentence, no table needed.
+  - Few rows (1-10): Use table format with insights.
+  - Many rows (10+): Use table format, show the first 10 rows, summarize patterns and mention how many total rows were returned.
+  - Empty results: Explain possible reasons (no matching data, filters too strict).
+
+  Please provide your response:
+
+variables:
+  - question
+  - sql_query
+  - query_results
