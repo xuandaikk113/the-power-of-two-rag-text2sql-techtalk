@@ -8,5 +8,6 @@
 6. Add more insight about current error logs
 7. Bổ sung benchmark metrics như:
    ![1770349241482](image/todo/1770349241482.png)
-8. Q&A slide
-9. Reference documents
+8. Live Demo
+9. Q&A slide
+10. Reference documents
