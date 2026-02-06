@@ -1,0 +1,1856 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Power of Two: How RAG Elevates Text-to-SQL Accuracy</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=JetBrains+Mono:wght@300;400;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --color-primary: #05668D;
+            --color-secondary: #028090;
+            --color-tertiary: #00A896;
+            --color-accent: #02C39A;
+            --color-dark: #0a1828;
+            --color-darker: #030b14;
+            --color-light: #f0f4f8;
+            --font-display: 'Orbitron', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            --font-body: 'Space Mono', monospace;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-body);
+            background: var(--color-darker);
+            color: var(--color-light);
+            overflow-x: hidden;
+        }
+
+        .presentation {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.6s ease;
+            padding: 4rem;
+            background: linear-gradient(135deg, var(--color-darker) 0%, #0d1b2a 50%, var(--color-dark) 100%);
+        }
+
+        .slide.active {
+            display: flex;
+            flex-direction: column;
+            opacity: 1;
+            animation: slideIn 0.6s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(30px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .slide-number {
+            position: absolute;
+            bottom: 2rem;
+            right: 2rem;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            color: var(--color-tertiary);
+            opacity: 0.7;
+        }
+
+        .slide-title {
+            font-family: var(--font-display);
+            font-size: 3rem;
+            font-weight: 900;
+            margin-bottom: 2rem;
+            background: linear-gradient(135deg, var(--color-tertiary), var(--color-accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            line-height: 1.2;
+        }
+
+        .subtitle {
+            font-family: var(--font-mono);
+            font-size: 2rem;
+            color: var(--color-secondary);
+            margin-bottom: 1rem;
+            font-weight: 300;
+        }
+
+        .content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 2rem;
+            overflow-y: auto;
+        }
+
+        .bullet-list {
+            list-style: none;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .bullet-list li {
+            font-size: 1.8rem;
+            padding-left: 3rem;
+            position: relative;
+            line-height: 1.6;
+            opacity: 0;
+            animation: fadeInUp 0.5s ease forwards;
+        }
+
+        .bullet-list li:nth-child(1) { animation-delay: 0.1s; }
+        .bullet-list li:nth-child(2) { animation-delay: 0.2s; }
+        .bullet-list li:nth-child(3) { animation-delay: 0.3s; }
+        .bullet-list li:nth-child(4) { animation-delay: 0.4s; }
+        .bullet-list li:nth-child(5) { animation-delay: 0.5s; }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .bullet-list li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0.5rem;
+            width: 1.5rem;
+            height: 1.5rem;
+            background: linear-gradient(135deg, var(--color-tertiary), var(--color-accent));
+            clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+            animation: pulse 2s ease infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+        }
+
+        .visual-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .grid-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                linear-gradient(rgba(2, 195, 154, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(2, 195, 154, 0.1) 1px, transparent 1px);
+            background-size: 40px 40px;
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        .code-block {
+            background: rgba(5, 102, 141, 0.1);
+            border-left: 4px solid var(--color-accent);
+            padding: 1.2rem 1.8rem;
+            font-family: var(--font-mono);
+            font-size: 1.3rem;
+            font-weight: 600;
+            line-height: 1.6;
+            overflow-x: auto;
+            margin: 1rem 0;
+            border-radius: 4px;
+            box-shadow: inset 0 0 20px rgba(2, 195, 154, 0.1);
+        }
+
+        .table-container {
+            background: rgba(5, 102, 141, 0.1);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: var(--font-mono);
+            font-size: 1.55rem;
+        }
+
+        th {
+            background: var(--color-primary);
+            color: var(--color-light);
+            padding: 1.2rem 1.5rem;
+            text-align: left;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        td {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid rgba(2, 195, 154, 0.2);
+        }
+
+        tr:hover {
+            background: rgba(2, 195, 154, 0.05);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, rgba(5, 102, 141, 0.2), rgba(2, 128, 144, 0.2));
+            padding: 2rem;
+            border-radius: 12px;
+            border: 2px solid var(--color-tertiary);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(2, 195, 154, 0.1), transparent);
+            animation: shimmer 3s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+        }
+
+        .stat-value {
+            font-family: var(--font-display);
+            font-size: 3rem;
+            font-weight: 900;
+            color: var(--color-accent);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            color: var(--color-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .diagram {
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            gap: 2rem;
+            padding: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .diagram-box {
+            background: linear-gradient(135deg, rgba(5, 102, 141, 0.3), rgba(2, 128, 144, 0.3));
+            border: 2px solid var(--color-tertiary);
+            padding: 2.5rem 2rem;
+            border-radius: 12px;
+            min-width: 450px;
+            text-align: center;
+            position: relative;
+            animation: float 3s ease-in-out infinite;
+            font-size: 1.7rem;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .diagram-box:nth-child(1) { animation-delay: 0s; }
+        .diagram-box:nth-child(2) { animation-delay: 0.3s; }
+        .diagram-box:nth-child(3) { animation-delay: 0.6s; }
+
+        .arrow {
+            font-size: 2rem;
+            color: var(--color-accent);
+            animation: slideRight 1.5s ease-in-out infinite;
+        }
+
+        @keyframes slideRight {
+            0%, 100% { transform: translateX(0); opacity: 1; }
+            50% { transform: translateX(10px); opacity: 0.6; }
+        }
+
+        .title-slide {
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(2, 195, 154, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(5, 102, 141, 0.15) 0%, transparent 50%),
+                linear-gradient(135deg, var(--color-darker) 0%, #0d1b2a 100%);
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .title-slide .slide-title {
+            font-size: 5rem;
+            margin-bottom: 4rem;
+            animation: glow 6s ease-in-out infinite;
+        }
+
+        @keyframes glow {
+            0%, 100% { text-shadow: 0 0 20px rgba(2, 195, 154, 0.5); }
+            50% { text-shadow: 0 0 40px rgba(2, 195, 154, 0.8), 0 0 60px rgba(2, 195, 154, 0.6); }
+        }
+
+        .tag {
+            display: inline-block;
+            background: rgba(2, 195, 154, 0.2);
+            border: 1px solid var(--color-accent);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            margin: 0.5rem;
+        }
+
+        .checkmark {
+            color: var(--color-accent);
+            font-weight: bold;
+            margin-right: 0.5rem;
+        }
+
+        .crossmark {
+            color: #ff4757;
+            font-weight: bold;
+            margin-right: 0.5rem;
+        }
+
+        .chart-container {
+            background: rgba(5, 102, 141, 0.1);
+            padding: 2rem;
+            border-radius: 12px;
+            margin: 1rem 0;
+        }
+
+        .bar-chart {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .bar-row {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .bar-label {
+            min-width: 230px;
+            font-family: var(--font-mono);
+            font-size: 1.5rem;
+        }
+
+        .bar {
+            height: 60px;
+            background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+            border-radius: 4px;
+            position: relative;
+            animation: growBar 1s ease-out forwards;
+            transform-origin: left;
+        }
+
+        @keyframes growBar {
+            from { transform: scaleX(0); }
+            to { transform: scaleX(1); }
+        }
+
+        .bar-value {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: white;
+            font-weight: bold;
+            font-family: var(--font-mono);
+            font-size: 1.1rem;
+        }
+
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            height: 100%;
+            margin-top: 7rem;
+        }
+
+        .flowchart {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .flow-step {
+            background: linear-gradient(135deg, rgba(5, 102, 141, 0.3), rgba(2, 128, 144, 0.3));
+            border: 2px solid var(--color-tertiary);
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            width: 100%;
+            max-width: 1100px;
+            text-align: center;
+            position: relative;
+            animation: fadeIn 0.5s ease forwards;
+            opacity: 0;
+            font-size: 1.6rem;
+            font-weight: 500;
+        }
+
+        .flow-step:nth-child(1) { animation-delay: 0.1s; }
+        .flow-step:nth-child(3) { animation-delay: 0.2s; }
+        .flow-step:nth-child(5) { animation-delay: 0.3s; }
+        .flow-step:nth-child(7) { animation-delay: 0.4s; }
+        .flow-step:nth-child(9) { animation-delay: 0.5s; }
+        .flow-step:nth-child(11) { animation-delay: 0.6s; }
+        .flow-step:nth-child(13) { animation-delay: 0.7s; }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        .flow-arrow {
+            font-size: 1.5rem;
+            color: var(--color-accent);
+            margin: 0.2rem 0;
+        }
+
+        .highlight-box {
+            background: linear-gradient(135deg, rgba(2, 195, 154, 0.2), rgba(2, 128, 144, 0.2));
+            border-left: 4px solid var(--color-accent);
+            padding: 1rem 1.5rem;
+            margin: 0.8rem 0;
+            border-radius: 4px;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, rgba(5, 102, 141, 0.2), rgba(2, 195, 154, 0.2));
+            border: 2px solid var(--color-tertiary);
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin: 1rem 0;
+            font-size: 1.7rem;
+            font-weight: 700;
+        }
+
+        .metric-title {
+            font-family: var(--font-display);
+            font-size: 1.5rem;
+            color: var(--color-accent);
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-formula {
+            font-family: var(--font-mono);
+            font-size: 1.1rem;
+            color: var(--color-secondary);
+            margin-top: 0.5rem;
+        }
+
+        .progress-indicator {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--color-tertiary), var(--color-accent));
+            transition: width 0.3s ease;
+            z-index: 1001;
+        }
+
+        .logo-placeholder {
+            width: 240px;
+            height: 240px;
+            min-width: 240px;
+            min-height: 240px;
+            max-width: 240px;
+            max-height: 240px;
+            aspect-ratio: 1 / 1;
+            background: conic-gradient(
+                from 0deg,
+                var(--color-primary),
+                var(--color-secondary),
+                var(--color-tertiary),
+                var(--color-accent),
+                var(--color-tertiary),
+                var(--color-secondary),
+                var(--color-primary)
+            );
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--font-display);
+            font-size: 2rem;
+            font-weight: 900;
+            margin: 2rem auto;
+            margin-top: 7rem;
+            animation: rotate 30s linear infinite;
+            box-shadow: 0 0 40px rgba(2, 195, 154, 0.5);
+            flex-shrink: 0;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .speaker-info {
+            font-family: var(--font-mono);
+            font-size: 1.2rem;
+            color: var(--color-secondary);
+            margin-top: 2rem;
+        }
+
+        .pipeline {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+            padding: 2rem 0;
+        }
+
+        .pipeline-step {
+            flex: 1;
+            min-width: 180px;
+            background: linear-gradient(135deg, rgba(5, 102, 141, 0.3), rgba(2, 128, 144, 0.3));
+            border: 2px solid var(--color-tertiary);
+            padding: 1.5rem;
+            border-radius: 8px;
+            text-align: center;
+            position: relative;
+        }
+
+        .step-number {
+            font-family: var(--font-display);
+            font-size: 3rem;
+            font-weight: 900;
+            color: var(--color-accent);
+            margin-bottom: 0.5rem;
+            text-shadow: 0 0 10px rgba(2, 195, 154, 0.5);
+        }
+
+        .step-title {
+            font-family: var(--font-mono);
+            font-size: 1.7rem;
+            color: var(--color-light);
+        }
+
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+
+        .comparison-side {
+            padding: 2rem;
+            border-radius: 12px;
+            border: 2px solid;
+            font-size: 1.4rem;
+            font-weight: 600;
+        }
+
+        .comparison-side.bad {
+            background: rgba(255, 71, 87, 0.1);
+            border-color: #ff4757;
+        }
+
+        .comparison-side.good {
+            background: rgba(2, 195, 154, 0.1);
+            border-color: var(--color-accent);
+        }
+
+        .comparison-title {
+            font-family: var(--font-display);
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .heatmap {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .heatmap-cell {
+            padding: 1.5rem;
+            border-radius: 8px;
+            text-align: center;
+            font-family: var(--font-mono);
+            font-weight: 600;
+            border: 2px solid;
+            font-size: 1.2rem;
+        }
+
+        .heatmap-cell.high {
+            background: rgba(2, 195, 154, 0.3);
+            border-color: var(--color-accent);
+        }
+
+        .heatmap-cell.medium {
+            background: rgba(2, 128, 144, 0.3);
+            border-color: var(--color-secondary);
+        }
+
+        .heatmap-cell.low {
+            background: rgba(5, 102, 141, 0.3);
+            border-color: var(--color-primary);
+        }
+
+        .architecture-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .arch-component {
+            background: linear-gradient(135deg, rgba(5, 102, 141, 0.2), rgba(2, 195, 154, 0.2));
+            border: 2px solid var(--color-tertiary);
+            padding: 1.5rem;
+            border-radius: 8px;
+            font-size: 1.4rem;
+            font-weight: 700;
+            text-align: center;
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @media (max-width: 1024px) {
+            .slide-title {
+                font-size: 2rem;
+            }
+            .subtitle {
+                font-size: 1.2rem;
+            }
+            .bullet-list li {
+                font-size: 1.1rem;
+            }
+            .two-column {
+                grid-template-columns: 1fr;
+            }
+            .comparison {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="progress-indicator" id="progress"></div>
+    <div class="presentation">
+        <!-- Slide 1: Title -->
+        <div class="slide active title-slide" data-slide="1">
+            <div class="grid-background"></div>
+            <div class="slide-title">The Power of Two:<br>How RAG Elevates<br>Text-to-SQL Accuracy</div>
+            <div class="subtitle">A Practical Approach for Enterprise-Scale Databases</div>
+            <br>
+            <div class="logo-placeholder">RAG + SQL</div>
+            <div class="speaker-info" style="margin-top: 8rem;">Tech Talk Presentation | February 2026</div>
+            <div class="slide-number">1 / 32</div>
+        </div>
+
+        <!-- Slide 2: The Challenge -->
+        <div class="slide" data-slide="2">
+            <div class="grid-background"></div>
+            <div class="slide-title">The Traditional Approach Falls Short</div>
+            <!-- line break here -->
+            <br>
+            <div class="content">
+                <ul class="bullet-list">
+                    <li><span class="crossmark">❌</span> Injecting entire schema into every prompt</li>
+                    <li><span class="crossmark">❌</span> Context window overflow (50+ tables × 20+ columns)</li>
+                    <li><span class="crossmark">❌</span> Token waste & reduced accuracy</li>
+                </ul>
+                <div class="visual-container">
+                    <div class="diagram" style="gap: 3rem;">
+                        <div class="diagram-box" style="padding: 3.5rem 3rem; min-width: 330px;">
+                            <div style="font-size: 4.5rem; margin-bottom: 1rem;">📊</div>
+                            <div style="font-size: 1.8rem; font-weight: 600;">300+ Tables</div>
+                        </div>
+                        <div class="arrow" style="font-size: 3.5rem;">→</div>
+                        <div class="diagram-box" style="padding: 3.5rem 3rem; min-width: 330px;">
+                            <div style="font-size: 4.5rem; margin-bottom: 1rem;">🤖</div>
+                            <div style="font-size: 1.8rem; font-weight: 600;">LLM Context</div>
+                        </div>
+                        <div class="arrow" style="font-size: 3.5rem;">→</div>
+                        <div class="diagram-box" style="border-color: #ff4757; background: rgba(255, 71, 87, 0.2); padding: 3.5rem 3rem; min-width: 330px;">
+                            <div style="font-size: 4.5rem; margin-bottom: 1rem;">⚠️</div>
+                            <div style="font-size: 1.8rem; font-weight: 600;">OVERFLOW!</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">2 / 32</div>
+        </div>
+
+        <!-- Slide 3: The Solution -->
+        <div class="slide" data-slide="3">
+            <div class="grid-background"></div>
+            <div class="slide-title">Schema Linking:<br>Retrieve, Don't Inject All</div>
+            <div class="content" style="margin-top: -4rem;">
+                <ul class="bullet-list">
+                    <li><span class="checkmark">✅</span> Enrich schemas with semantic descriptions</li>
+                    <li><span class="checkmark">✅</span> Index into Vector Database</li>
+                    <li><span class="checkmark">✅</span> Retrieve only top-K relevant tables per query</li>
+                </ul>
+                <div class="pipeline">
+                    <div class="pipeline-step">
+                        <div class="step-number">1</div>
+                        <div class="step-title">Enrich<br>Schema Files</div>
+                    </div>
+                    <div class="arrow">→</div>
+                    <div class="pipeline-step">
+                        <div class="step-number">2</div>
+                        <div class="step-title">Index<br>Vector DB</div>
+                    </div>
+                    <div class="arrow">→</div>
+                    <div class="pipeline-step">
+                        <div class="step-number">3</div>
+                        <div class="step-title">Retrieve<br>Relevant Tables</div>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">3 / 32</div>
+        </div>
+
+        <!-- Slide 4: LLM Selection Problem -->
+        <div class="slide" data-slide="4">
+            <div class="grid-background"></div>
+            <div class="slide-title">Not All LLMs Are<br>Created Equal for SQL</div>
+            <div class="content">
+                <ul class="bullet-list">
+                    <li>General-purpose models (Llama, Qwen, GPT) excel at chat</li>
+                    <li>SQL generation requires specialized reasoning</li>
+                    <li>Benchmark evidence matters</li>
+                </ul>
+                <div class="chart-container">
+                    <div class="bar-chart">
+                        <div class="bar-row">
+                            <div class="bar-label">OmniSQL-14B</div>
+                            <div class="bar" style="width: 71.2%;">
+                                <div class="bar-value">71.2%</div>
+                            </div>
+                        </div>
+                        <div class="bar-row">
+                            <div class="bar-label">SQLCoder-8B</div>
+                            <div class="bar" style="width: 68.9%;">
+                                <div class="bar-value">68.9%</div>
+                            </div>
+                        </div>
+                        <div class="bar-row">
+                            <div class="bar-label">GPT-4o</div>
+                            <div class="bar" style="width: 68.4%;">
+                                <div class="bar-value">68.4%</div>
+                            </div>
+                        </div>
+                        <div class="bar-row">
+                            <div class="bar-label">Qwen2.5-72B</div>
+                            <div class="bar" style="width: 58.1%;">
+                                <div class="bar-value">58.1%</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 1rem; font-family: var(--font-mono); font-size: 0.85rem; color: var(--color-secondary); text-align: center;">
+                        Bird-SQL Benchmark Performance (Execution Accuracy)
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">4 / 32</div>
+        </div>
+
+        <!-- Slide 5: SQL-Specialized Models -->
+        <div class="slide" data-slide="5">
+            <div class="grid-background"></div>
+            <div class="slide-title">Enter SQL-Specialized LLMs</div>
+            <div class="content">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value">71.2%</div>
+                        <div class="stat-label">OmniSQL Bird-SQL</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">87.1%</div>
+                        <div class="stat-label">OmniSQL Spider</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">14B</div>
+                        <div class="stat-label">Parameters</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">✓</div>
+                        <div class="stat-label">Self-Hostable</div>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Model</th>
+                                <th>Size</th>
+                                <th>Bird-SQL EX</th>
+                                <th>Spider EX</th>
+                                <th>Self-Host</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>OmniSQL</td>
+                                <td>14B</td>
+                                <td>71.2%</td>
+                                <td>87.1%</td>
+                                <td>✅ Ollama</td>
+                            </tr>
+                            <tr>
+                                <td>SQLCoder</td>
+                                <td>8B</td>
+                                <td>68.9%</td>
+                                <td>84.5%</td>
+                                <td>✅ Ollama</td>
+                            </tr>
+                            <tr>
+                                <td>GPT-4o</td>
+                                <td>?</td>
+                                <td>68.4%</td>
+                                <td>85.3%</td>
+                                <td>❌ API</td>
+                            </tr>
+                            <tr>
+                                <td>Qwen2.5</td>
+                                <td>72B</td>
+                                <td>58.1%</td>
+                                <td>79.2%</td>
+                                <td>✅ Heavy</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="slide-number">5 / 32</div>
+        </div>
+        
+        <!-- Slide 6: OmniSQL Benchmark -->
+        <div class="slide" data-slide="6">
+            <div class="grid-background"></div>
+            <div class="slide-title">OmniSQL Benchmark</div>
+            <div class="content" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2rem;">
+                <div style="text-align: center;">
+                    <img src="images/omnisql_benchmark.png" 
+                         alt="OmniSQL Benchmark Table" 
+                         style="max-width: 90%; max-height: 70vh; object-fit: contain; border-radius: 12px; box-shadow: 0 10px 40px rgba(2, 195, 154, 0.3);">
+                </div>
+                <div class="highlight-box" style="margin-top: 0;">
+                    OmniSQL outperforms general-purpose LLMs by 3-13% on SQL benchmarks
+                </div>
+            </div>
+            <div class="slide-number">6 / 32</div>
+        </div>
+
+        <!-- Slide 7: System Architecture -->
+        <div class="slide" data-slide="7">
+            <div class="grid-background"></div>
+            <div class="slide-title">End-to-End<br>System Architecture</div>
+            <div class="content">
+                <div class="architecture-grid">
+                    <div class="arch-component">1. User Query Input</div>
+                    <div class="arch-component">2. Query Enhancement</div>
+                    <div class="arch-component">3. Column-First RAG</div>
+                    <div class="arch-component">4. Anchor Tables</div>
+                    <div class="arch-component">5. Table Expansion</div>
+                    <div class="arch-component">6. Schema Context</div>
+                    <div class="arch-component">7. SQL Generation</div>
+                    <div class="arch-component">8. T-SQL Correction</div>
+                    <div class="arch-component">9. Self-Healing</div>
+                    <div class="arch-component">10. Response Format</div>
+                </div>
+                <div class="highlight-box">
+                    Complete pipeline from natural language to validated T-SQL with automated error recovery
+                </div>
+            </div>
+            <div class="slide-number">7 / 32</div>
+        </div>
+
+        <!-- Slide 8: Schema Enrichment -->
+        <div class="slide" data-slide="8">
+            <div class="grid-background"></div>
+            <div class="slide-title">Auto-Enrichment with<br>Human Review</div>
+            <div class="content">
+                <div class="comparison">
+                    <div class="comparison-side bad">
+                        <div class="comparison-title">BEFORE (Raw DDL)</div>
+                        <div class="code-block">CREATE TABLE Person (<br>
+  PersonID INT PRIMARY KEY,<br>
+  FirstName NVARCHAR(50),<br>
+  Gender NVARCHAR(1)<br>
+);</div>
+                    </div>
+                    <div class="comparison-side good">
+                        <div class="comparison-title">AFTER (Enriched)</div>
+                        <div class="code-block">Table: Person<br>
+Description: "Core entity storing<br>
+employee and contact information"<br><br>
+Columns:<br>
+- PersonID: Unique identifier (PK)<br>
+- FirstName: Given name<br>
+- Gender: M=Male, F=Female, U=Unknown<br>
+  Tags: ["sex", "sexual"]</div>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">8 / 32</div>
+        </div>
+
+        <!-- Slide 9: Indexing Strategy -->
+        <div class="slide" data-slide="9">
+            <div class="grid-background"></div>
+            <div class="slide-title">Dual-Collection<br>Indexing Strategy</div>
+            <div class="content">
+                <div class="two-column">
+                    <div>
+                        <div class="metric-card">
+                            <div class="metric-title">Collection 1: Column Metadata</div>
+                            <div>Fine-grained column-level indexing</div>
+                            <div class="metric-formula">Embed: "column_name + description + tags"</div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="metric-card">
+                            <div class="metric-title">Collection 2: Table Metadata</div>
+                            <div>Coarse-grained table-level indexing</div>
+                            <div class="metric-formula">Embed: "table_name + semantic_description"</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="highlight-box">
+                    Separate embedding spaces enable both precision and recall optimization
+                </div>
+            </div>
+            <div class="slide-number">9 / 32</div>
+        </div>
+
+        <!-- Slide 10: Column-First Retrieval -->
+        <div class="slide" data-slide="10">
+            <div class="grid-background"></div>
+            <div class="slide-title">Why Column-First Search?</div>
+            <div class="content">
+                <ul class="bullet-list">
+                    <li>User queries often mention column-level concepts</li>
+                    <li>More granular matching = higher recall</li>
+                    <li>Columns aggregate to tables (bottom-up approach)</li>
+                </ul>
+                <div class="comparison">
+                    <div class="comparison-side good">
+                        <div class="comparison-title">Column-First ✓</div>
+                        <div class="code-block">Query: "orders in January 2024"<br><br>
+1. Search columns →<br>
+   "OrderDate" (0.89)<br>
+   "PlacedDate" (0.85)<br><br>
+2. Aggregate to tables →<br>
+   SalesOrder (2 hits)<br><br>
+3. Return: SalesOrder</div>
+                    </div>
+                    <div class="comparison-side bad">
+                        <div class="comparison-title">Table-First ✗</div>
+                        <div class="code-block">Query: "orders in January 2024"<br><br>
+1. Search tables →<br>
+   "SalesOrderHeader" (0.45)<br>
+   (missed due to name mismatch)<br><br>
+❌ May miss relevant table<br>
+because "orders" doesn't<br>
+match "SalesOrderHeader"</div>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">10 / 32</div>
+        </div>
+
+        <!-- Slide 11: Anchor Table Identification -->
+        <div class="slide" data-slide="11">
+            <div class="grid-background"></div>
+            <div class="slide-title">From Columns to<br>Anchor Tables</div>
+            <div class="content">
+                <div class="flowchart">
+                    <div class="flow-step">
+                        <strong>Step 1:</strong> For each column hit, aggregate score to parent table
+                    </div>
+                    <div class="flow-arrow">↓</div>
+                    <div class="flow-step">
+                        <strong>Step 2:</strong> Sort tables by aggregated score (descending)
+                    </div>
+                    <div class="flow-arrow">↓</div>
+                    <div class="flow-step">
+                        <strong>Step 3:</strong> Return top-K tables as Anchors (default K=5)
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Table</th>
+                                <th>Column Hits</th>
+                                <th>Aggregate Score</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>SalesOrderHeader</td>
+                                <td>OrderDate (0.89) + Status (0.72)</td>
+                                <td><strong>1.61</strong></td>
+                            </tr>
+                            <tr>
+                                <td>Customer</td>
+                                <td>Name (0.65)</td>
+                                <td>0.65</td>
+                            </tr>
+                            <tr>
+                                <td>Product</td>
+                                <td>(none)</td>
+                                <td>0.00</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="slide-number">11 / 32</div>
+        </div>
+
+        <!-- Slide 12: Related Table Expansion -->
+        <div class="slide" data-slide="12">
+            <div class="grid-background"></div>
+            <div class="slide-title">Finding Related Tables<br>via FK Traversal</div>
+            <div class="content">
+                <div class="metric-card">
+                    <div class="metric-title">Scoring Formula</div>
+                    <div class="code-block">Related Score = Base Score + Bridge Bonus + Keyword Bonus<br><br>
+Base Score = 0.5 × max(AnchorScore)<br>
+Bridge Bonus = +1.0 if connected to >1 anchor<br>
+Keyword Bonus = +0.5 if matches query tokens</div>
+                </div>
+                <div class="diagram">
+                    <div class="diagram-box" style="background: linear-gradient(135deg, rgba(2, 195, 154, 0.4), rgba(2, 128, 144, 0.4));">
+                        Anchor Table 1<br>
+                        <small>(Score: 1.61)</small>
+                    </div>
+                    <div class="arrow">⟷</div>
+                    <div class="diagram-box">
+                        Related Table<br>
+                        <small>(via FK)</small>
+                    </div>
+                    <div class="arrow">⟷</div>
+                    <div class="diagram-box" style="background: linear-gradient(135deg, rgba(2, 195, 154, 0.4), rgba(2, 128, 144, 0.4));">
+                        Anchor Table 2<br>
+                        <small>(Score: 1.25)</small>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">12 / 32</div>
+        </div>
+
+        <!-- Slide 13: Schema Pruning -->
+        <div class="slide" data-slide="13">
+            <div class="grid-background"></div>
+            <div class="slide-title">Smart Context<br>Optimization</div>
+            <div class="content">
+                <div class="comparison">
+                    <div class="comparison-side bad">
+                        <div class="comparison-title">BEFORE (Full Schema)</div>
+                        <div class="code-block">CREATE TABLE SalesOrder (<br>
+  OrderID INT PRIMARY KEY,<br>
+  <span style="text-decoration: line-through; opacity: 0.5;">RowGuid uniqueidentifier,</span><br>
+  <span style="text-decoration: line-through; opacity: 0.5;">ModifiedDate datetime,</span><br>
+  <span style="text-decoration: line-through; opacity: 0.5;">CreatedBy int,</span><br>
+  OrderDate DATE,<br>
+  Status VARCHAR(20)<br>
+);</div>
+                    </div>
+                    <div class="comparison-side good">
+                        <div class="comparison-title">AFTER (Optimized)</div>
+                        <div class="code-block">CREATE TABLE SalesOrder (<br>
+  OrderID INT PRIMARY KEY,<br>
+  OrderDate DATE,<br>
+  Status VARCHAR(20)<br>
+  -- Samples: ['Pending',<br>
+               'Shipped',<br>
+               'Cancelled']<br>
+);</div>
+                    </div>
+                </div>
+                <div class="highlight-box">
+                    <span class="checkmark">✅</span> Pruning: Remove low-value columns (IDs, timestamps, system cols)<br>
+                    <span class="checkmark">✅</span> Sample Injection: Add real values for search columns
+                </div>
+            </div>
+            <div class="slide-number">13 / 32</div>
+        </div>
+
+        <!-- Slide 14: T-SQL Auto-Correction -->
+        <div class="slide" data-slide="14">
+            <div class="grid-background"></div>
+            <div class="slide-title">Enforcing T-SQL<br>Syntax Compliance</div>
+            <div class="content">
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>MySQL/PostgreSQL</th>
+                                <th>T-SQL Correction</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>LIMIT 10</code></td>
+                                <td><code>SELECT TOP 10</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>string1 || string2</code></td>
+                                <td><code>CONCAT(string1, string2)</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>NOW()</code></td>
+                                <td><code>GETDATE()</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>IF(cond, a, b)</code></td>
+                                <td><code>IIF(cond, a, b)</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>table.group</code></td>
+                                <td><code>table.[group]</code></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="highlight-box">
+                    Rule-based validator + transformer auto-corrects common mistakes before execution
+                </div>
+            </div>
+            <div class="slide-number">14 / 32</div>
+        </div>
+
+        <!-- Slide 15: Self-Healing Loop -->
+        <div class="slide" data-slide="15">
+            <div class="grid-background"></div>
+            <div class="slide-title">Execute, Diagnose,<br>Heal, Retry</div>
+            <div class="content">
+                <div class="flowchart">
+                    <div class="flow-step">Execute SQL against read-only connection</div>
+                    <div class="flow-arrow">↓</div>
+                    <div class="flow-step">Capture error messages if execution fails</div>
+                    <div class="flow-arrow">↓</div>
+                    <div class="flow-step">Feed error back to LLM for correction</div>
+                    <div class="flow-arrow">↓</div>
+                    <div class="flow-step">Retry up to N times (default: 5)</div>
+                </div>
+                <div class="code-block">Attempt 1: "Invalid object name 'Orders'"<br>
+         → LLM Fix: Add schema prefix "Sales.Orders"<br><br>
+Attempt 2: "Invalid column name 'Qty'"<br>
+         → LLM Fix: Change to "OrderQty"<br><br>
+Attempt 3: ✅ Success!</div>
+                <div class="highlight-box" style="background: rgba(255, 71, 87, 0.1); border-color: #ff4757;">
+                    ⚠️ Security Note: Always use READ-ONLY database credentials
+                </div>
+            </div>
+            <div class="slide-number">15 / 32</div>
+        </div>
+
+        <!-- Slide 16: Gold Dataset -->
+        <div class="slide" data-slide="16">
+            <div class="grid-background"></div>
+            <div class="slide-title">Building Your<br>Evaluation Gold Standard</div>
+            <div class="content">
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Column</th>
+                                <th>Purpose</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>question</td>
+                                <td>Natural language query</td>
+                            </tr>
+                            <tr>
+                                <td>gold_sql</td>
+                                <td>Human-verified correct SQL</td>
+                            </tr>
+                            <tr>
+                                <td>gold_tables</td>
+                                <td>Tables that should be retrieved</td>
+                            </tr>
+                            <tr>
+                                <td>expected_record_count</td>
+                                <td>Number of rows expected</td>
+                            </tr>
+                            <tr>
+                                <td>expected_pks</td>
+                                <td>Primary key values for verification</td>
+                            </tr>
+                            <tr>
+                                <td>difficulty</td>
+                                <td>basic / intermediate / advanced</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="highlight-box">
+                    Generate question-SQL pairs covering all difficulty levels with expected results & metadata. <strong>Human review is mandatory.</strong>
+                </div>
+            </div>
+            <div class="slide-number">16 / 32</div>
+        </div>
+
+        <!-- Slide 17: Basic SQL Dataset Samples -->
+        <div class="slide" data-slide="17">
+            <div class="grid-background"></div>
+            <div class="slide-title">Basic SQL<br>Dataset Samples</div>
+            <div class="content">
+                <div class="table-container" style="max-height: 500px; overflow-y: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Question</th>
+                                <th>Query</th>
+                                <th>Tables</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>1</td>
+                                <td>List all departments</td>
+                                <td style="font-size: 1.2rem;">SELECT * FROM HumanResources.Department;</td>
+                                <td>HumanResources.Department</td>
+                            </tr>
+                            <tr>
+                                <td>6</td>
+                                <td>Retrieve names of all products</td>
+                                <td style="font-size: 1.2rem;">SELECT Name FROM Production.Product;</td>
+                                <td>Production.Product</td>
+                            </tr>
+                            <tr>
+                                <td>11</td>
+                                <td>Get total employees in company</td>
+                                <td style="font-size: 1.2rem;">SELECT COUNT(*) FROM HumanResources.Employee;</td>
+                                <td>HumanResources.Employee</td>
+                            </tr>
+                            <tr>
+                                <td>18</td>
+                                <td>Find highest list price</td>
+                                <td style="font-size: 1.2rem;">SELECT MAX(ListPrice) FROM Production.Product;</td>
+                                <td>Production.Product</td>
+                            </tr>
+                            <tr>
+                                <td>23</td>
+                                <td>Find all departments in manufacturing</td>
+                                <td style="font-size: 1.2rem;">SELECT * FROM HumanResources.Department WHERE GroupName = 'Manufacturing';</td>
+                                <td>HumanResources.Department</td>
+                            </tr>
+                            <tr>
+                                <td>33</td>
+                                <td>Count how many products are red</td>
+                                <td style="font-size: 1.2rem;">SELECT COUNT(*) FROM Production.Product WHERE Color = 'Red';</td>
+                                <td>Production.Product</td>
+                            </tr>
+                            <tr>
+                                <td>40</td>
+                                <td>Show top 5 most expensive products</td>
+                                <td style="font-size: 1.2rem;">SELECT TOP 5 Name, ListPrice FROM Production.Product ORDER BY ListPrice DESC;</td>
+                                <td>Production.Product</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="highlight-box">
+                    <span class="checkmark">✅</span> Basic SQL Queries | Single-table operations | Filtering & Aggregation
+                </div>
+            </div>
+            <div class="slide-number">17 / 32</div>
+        </div>
+
+        <!-- Slide 18: Intermediate SQL Dataset Samples -->
+        <div class="slide" data-slide="18">
+            <div class="grid-background"></div>
+            <div class="slide-title">Intermediate SQL<br>Dataset Samples</div>
+            <div class="content">
+                <div class="table-container" style="max-height: 500px; overflow-y: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Question</th>
+                                <th>Query</th>
+                                <th>Tables</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>201</td>
+                                <td>Total sales per territory</td>
+                                <td style="font-size: 1.2rem;">SELECT st.Name, SUM(soh.SubTotal) AS TotalSales FROM Sales.SalesOrderHeader soh JOIN Sales.SalesTerritory st ON soh.TerritoryID = st.TerritoryID GROUP BY st.Name;</td>
+                                <td>SalesOrderHeader, SalesTerritory</td>
+                            </tr>
+                            <tr>
+                                <td>207</td>
+                                <td>Calculate running total of sales</td>
+                                <td style="font-size: 1.2rem;">SELECT SalesOrderID, OrderDate, SubTotal, SUM(SubTotal) OVER(ORDER BY OrderDate, SalesOrderID) AS RunningTotal FROM Sales.SalesOrderHeader;</td>
+                                <td>SalesOrderHeader</td>
+                            </tr>
+                            <tr>
+                                <td>215</td>
+                                <td>Products sold in >10 orders</td>
+                                <td style="font-size: 1.2rem;">SELECT ProductID, COUNT(DISTINCT SalesOrderID) AS OrderCount FROM Sales.SalesOrderDetail GROUP BY ProductID HAVING COUNT(DISTINCT SalesOrderID) > 10;</td>
+                                <td>SalesOrderDetail</td>
+                            </tr>
+                            <tr>
+                                <td>225</td>
+                                <td>Calculate total sales per year (CTE)</td>
+                                <td style="font-size: 1.2rem;">WITH YearlySales AS (SELECT YEAR(OrderDate) AS SaleYear, TotalDue FROM Sales.SalesOrderHeader) SELECT SaleYear, SUM(TotalDue) AS AnnualTotal FROM YearlySales GROUP BY SaleYear;</td>
+                                <td>SalesOrderHeader</td>
+                            </tr>
+                            <tr>
+                                <td>237</td>
+                                <td>Products sold in every territory</td>
+                                <td style="font-size: 1.2rem;">SELECT ProductID FROM Sales.SalesOrderDetail sod JOIN Sales.SalesOrderHeader soh ON sod.SalesOrderID = soh.SalesOrderID GROUP BY ProductID HAVING COUNT(DISTINCT soh.TerritoryID) = (SELECT COUNT(*) FROM Sales.SalesTerritory);</td>
+                                <td>SalesOrderDetail, SalesOrderHeader, SalesTerritory</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="highlight-box">
+                    <span class="checkmark">✅</span> Intermediate Queries | JOINs | Window Functions | CTEs | Subqueries
+                </div>
+            </div>
+            <div class="slide-number">18 / 32</div>
+        </div>
+
+        <!-- Slide 19: Advanced SQL Dataset Samples -->
+        <div class="slide" data-slide="19">
+            <div class="grid-background"></div>
+            <div class="slide-title">Advanced SQL<br>Dataset Samples</div>
+            <div class="content">
+                <div class="table-container" style="max-height: 500px; overflow-y: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Question</th>
+                                <th>Query</th>
+                                <th>Tables</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>301</td>
+                                <td>Management hierarchy (Recursive CTE)</td>
+                                <td style="font-size: 1.2rem;">WITH Emp_CTE AS (SELECT BusinessEntityID, OrganizationNode, OrganizationLevel, JobTitle, CAST(JobTitle AS nvarchar(MAX)) AS HierarchyPath FROM HumanResources.Employee WHERE OrganizationLevel = 0 UNION ALL SELECT e.BusinessEntityID, e.OrganizationNode, e.OrganizationLevel, e.JobTitle, ecte.HierarchyPath + ' -> ' + e.JobTitle FROM HumanResources.Employee e INNER JOIN Emp_CTE ecte ON e.OrganizationNode.GetAncestor(1) = ecte.OrganizationNode) SELECT * FROM Emp_CTE;</td>
+                                <td>HumanResources.Employee</td>
+                            </tr>
+                            <tr>
+                                <td>303</td>
+                                <td>Pivot sales by year and territory</td>
+                                <td style="font-size: 1.2rem;">SELECT * FROM (SELECT YEAR(soh.OrderDate) AS [Year], st.[Group], soh.TotalDue FROM Sales.SalesOrderHeader soh JOIN Sales.SalesTerritory st ON soh.TerritoryID = st.TerritoryID) AS SourceTable PIVOT (SUM(TotalDue) FOR [Group] IN ([North America], [Europe], [Pacific])) AS PivotTable;</td>
+                                <td>SalesOrderHeader, SalesTerritory</td>
+                            </tr>
+                            <tr>
+                                <td>307</td>
+                                <td>3-month moving average of sales</td>
+                                <td style="font-size: 1.2rem;">WITH MonthlySales AS (SELECT CAST(FORMAT(OrderDate, 'yyyy-MM-01') AS date) AS MonthStart, SUM(TotalDue) AS MonthlyTotal FROM Sales.SalesOrderHeader GROUP BY FORMAT(OrderDate, 'yyyy-MM-01')) SELECT MonthStart, MonthlyTotal, AVG(MonthlyTotal) OVER (ORDER BY MonthStart ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS MovingAvg FROM MonthlySales;</td>
+                                <td>SalesOrderHeader</td>
+                            </tr>
+                            <tr>
+                                <td>318</td>
+                                <td>Cumulative % of revenue by product</td>
+                                <td style="font-size: 1.2rem;">WITH Sales AS (SELECT ProductID, SUM(LineTotal) AS ProdTotal FROM Sales.SalesOrderDetail GROUP BY ProductID), Tot AS (SELECT SUM(LineTotal) AS GrandTotal FROM Sales.SalesOrderDetail) SELECT s.ProductID, (s.ProdTotal / t.GrandTotal) * 100 AS Pct, SUM(s.ProdTotal) OVER (ORDER BY s.ProdTotal DESC) / t.GrandTotal * 100 AS CumulativePct FROM Sales s CROSS JOIN Tot t;</td>
+                                <td>SalesOrderDetail</td>
+                            </tr>
+                            <tr>
+                                <td>334</td>
+                                <td>Pareto products (80% of revenue)</td>
+                                <td style="font-size: 1.2rem;">WITH ProdRev AS (SELECT ProductID, SUM(LineTotal) AS Rev FROM Sales.SalesOrderDetail GROUP BY ProductID), RunningTotal AS (SELECT ProductID, Rev, SUM(Rev) OVER (ORDER BY Rev DESC) AS RT, SUM(Rev) OVER () AS Total FROM ProdRev) SELECT * FROM RunningTotal WHERE RT <= Total * 0.8;</td>
+                                <td>SalesOrderDetail</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="highlight-box">
+                    <span class="checkmark">✅</span> Advanced Queries | Recursive CTEs | PIVOT/UNPIVOT | XML | Analytics
+                </div>
+            </div>
+            <div class="slide-number">19 / 32</div>
+        </div>
+
+        <!-- Slide 20: Future Enhancement -->
+        <div class="slide" data-slide="20">
+            <div class="grid-background"></div>
+            <div class="slide-title">Continuous Learning<br>from Expert Feedback</div>
+            <div class="content">
+                <div class="flowchart">
+                    <div class="flow-step">User asks question → System generates SQL</div>
+                    <div class="flow-arrow">↓</div>
+                    <div class="flow-step">Expert reviews → Clicks 👍 or 👎</div>
+                    <div class="flow-arrow">↓</div>
+                    <div class="flow-step">If 👍: Index (question, SQL) pair into gold dataset vector store</div>
+                    <div class="flow-arrow">↓</div>
+                    <div class="flow-step">Future queries → Retrieve similar pairs as few-shot examples</div>
+                    <div class="flow-arrow">↓</div>
+                    <div class="flow-step">LLM generates SQL with reference examples</div>
+                </div>
+            </div>
+            <div class="slide-number">20 / 32</div>
+        </div>
+
+        <!-- Slide 21: Benchmark Metrics -->
+        <div class="slide" data-slide="21">
+            <div class="grid-background"></div>
+            <div class="slide-title">Key Metrics for<br>System Evaluation</div>
+            <div class="content">
+                <div class="metric-card">
+                    <div class="metric-title">Table Recall</div>
+                    <div>Percentage of gold tables retrieved by RAG</div>
+                    <div class="metric-formula">Table Recall = |Retrieved ∩ Gold| / |Gold|</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">Execution Success Rate</div>
+                    <div>Percentage of queries that execute without error</div>
+                    <div class="metric-formula">Execution Success = Successful Queries / Total Queries</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">Semantic Score</div>
+                    <div>AST-based SQL similarity measurement</div>
+                    <div class="metric-formula">Semantic Score = 1 - (AST Diff Nodes / Total AST Nodes)</div>
+                </div>
+            </div>
+            <div class="slide-number">21 / 32</div>
+        </div>
+
+        <!-- Slide 22: Additional Evaluation Metrics -->
+        <div class="slide" data-slide="22">
+            <div class="grid-background"></div>
+            <div class="slide-title">Additional Evaluation<br>Metrics</div>
+            <div class="content" style="justify-content: flex-start; margin-top: 1rem; gap: 1rem;">
+                <div class="metric-card" style="padding: 1rem 1.5rem;">
+                    <div class="metric-title">Record Count Match</div>
+                    <div>Verifies the generated SQL returns the correct number of rows</div>
+                    <div class="metric-formula">Match = (Generated Row Count == Expected Row Count)</div>
+                    <div class="code-block" style="margin-top: 1rem;">Example:<br>
+Expected: 150 orders | Generated SQL: 150 rows → ✅ Match<br>
+Expected: 150 orders | Generated SQL: 148 rows → ❌ Mismatch</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">Expected Answer Match</div>
+                    <div>Compares actual result values with ground truth answers</div>
+                    <div class="metric-formula">Match = (Generated Results ⊆ Expected Results)</div>
+                    <div class="code-block" style="margin-top: 1rem;">Example:<br>
+Expected: Total Sales = $1,234,567.89<br>
+Generated: Total Sales = $1,234,567.89 → ✅ Match<br>
+Generated: Total Sales = $1,234,500.00 → ❌ Mismatch</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">Primary Keys Match</div>
+                    <div>Ensures correct entity identification regardless of column order</div>
+                    <div class="metric-formula">Match = (Generated PKs == Expected PKs)</div>
+                    <div class="code-block" style="margin-top: 1rem;">Example:<br>
+Expected PKs: [101, 102, 103] (Top 3 customers by revenue)<br>
+Generated PKs: [101, 102, 103] → ✅ Match<br>
+Generated PKs: [101, 104, 105] → ❌ Mismatch (wrong entities)</div>
+                </div>
+            </div>
+            <div class="slide-number">22 / 32</div>
+        </div>
+
+        <!-- Slide 23: Benchmark Results -->
+        <div class="slide" data-slide="22">
+            <div class="grid-background"></div>
+            <div class="slide-title">System Performance<br>Results</div>
+            <div class="content">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value">377</div>
+                        <div class="stat-label">Total Queries</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">96.16%</div>
+                        <div class="stat-label">Table Recall</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">88.86%</div>
+                        <div class="stat-label">Execution Success</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">66.44%</div>
+                        <div class="stat-label">Semantic Score</div>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Difficulty</th>
+                                <th>Count</th>
+                                <th>Table Recall</th>
+                                <th>Exec Success</th>
+                                <th>Semantic Score</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Basic</td>
+                                <td>192</td>
+                                <td>99.39%</td>
+                                <td>98.44%</td>
+                                <td>73.60%</td>
+                            </tr>
+                            <tr>
+                                <td>Intermediate</td>
+                                <td>97</td>
+                                <td>93.28%</td>
+                                <td>87.63%</td>
+                                <td>62.65%</td>
+                            </tr>
+                            <tr>
+                                <td>Advanced</td>
+                                <td>88</td>
+                                <td>92.27%</td>
+                                <td>69.32%</td>
+                                <td>54.98%</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="slide-number">23 / 32</div>
+        </div>
+
+        <!-- Slide 24: RAG Impact Analysis -->
+        <div class="slide" data-slide="23">
+            <div class="grid-background"></div>
+            <div class="slide-title">Proving the<br>Value of RAG</div>
+            <div class="content">
+                <div class="highlight-box">
+                    <strong>Key Insight:</strong> High table recall (96%+) enables accurate SQL generation
+                </div>
+                <div class="chart-container">
+                    <div class="bar-chart">
+                        <div class="bar-row">
+                            <div class="bar-label">Basic</div>
+                            <div class="bar" style="width: 99.39%; background: linear-gradient(90deg, var(--color-accent), #32ff7e);">
+                                <div class="bar-value">99.39% Recall → 98.44% Success</div>
+                            </div>
+                        </div>
+                        <div class="bar-row">
+                            <div class="bar-label">Intermediate</div>
+                            <div class="bar" style="width: 93.28%; background: linear-gradient(90deg, var(--color-secondary), var(--color-tertiary));">
+                                <div class="bar-value">93.28% Recall → 87.63% Success</div>
+                            </div>
+                        </div>
+                        <div class="bar-row">
+                            <div class="bar-label">Advanced</div>
+                            <div class="bar" style="width: 92.27%; background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));">
+                                <div class="bar-value">92.27% Recall → 69.32% Success</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="highlight-box">
+                    Each 5% improvement in recall ≈ 8% improvement in execution success
+                </div>
+            </div>
+            <div class="slide-number">24 / 32</div>
+        </div>
+
+        <!-- Slide 25: Latency Breakdown -->
+        <div class="slide" data-slide="24">
+            <div class="grid-background"></div>
+            <div class="slide-title">Performance &<br>Latency Analysis</div>
+            <div class="content">
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Stage</th>
+                                <th>Avg (ms)</th>
+                                <th>Median (ms)</th>
+                                <th>Max (ms)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Retrieval</td>
+                                <td>130</td>
+                                <td>101</td>
+                                <td>845</td>
+                            </tr>
+                            <tr style="background: rgba(255, 71, 87, 0.1);">
+                                <td><strong>Generation</strong></td>
+                                <td><strong>35,352</strong></td>
+                                <td><strong>35,800</strong></td>
+                                <td><strong>88,464</strong></td>
+                            </tr>
+                            <tr>
+                                <td>Execution</td>
+                                <td>68</td>
+                                <td>39</td>
+                                <td>1,676</td>
+                            </tr>
+                            <tr style="background: rgba(2, 195, 154, 0.1);">
+                                <td><strong>Total</strong></td>
+                                <td><strong>35,556</strong></td>
+                                <td><strong>35,919</strong></td>
+                                <td><strong>88,707</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="highlight-box" style="background: rgba(255, 71, 87, 0.1); border-color: #ff4757;">
+                    ⚠️ Key Observation: Generation dominates latency (self-hosted LLM)<br>
+                    Retrieval + Execution: &lt;200ms | Generation: ~35 seconds
+                </div>
+            </div>
+            <div class="slide-number">25 / 32</div>
+        </div>
+
+        <!-- Slide 26: Error Analysis -->
+        <div class="slide" data-slide="25">
+            <div class="grid-background"></div>
+            <div class="slide-title">Understanding<br>Failure Cases</div>
+            <div class="content">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value">19</div>
+                        <div class="stat-label">Runtime Errors (45%)</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">15</div>
+                        <div class="stat-label">Driver Errors (36%)</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">8</div>
+                        <div class="stat-label">Syntax Errors (19%)</div>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Difficulty Level</th>
+                                <th>Driver</th>
+                                <th>Runtime</th>
+                                <th>Syntax</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Basic</td>
+                                <td>1</td>
+                                <td>2</td>
+                                <td>0</td>
+                            </tr>
+                            <tr>
+                                <td>Intermediate</td>
+                                <td>3</td>
+                                <td>8</td>
+                                <td>1</td>
+                            </tr>
+                            <tr style="background: rgba(255, 71, 87, 0.1);">
+                                <td><strong>Advanced</strong></td>
+                                <td><strong>11</strong></td>
+                                <td><strong>9</strong></td>
+                                <td><strong>7</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="highlight-box">
+                    Advanced queries account for 64% of all errors despite being only 23% of queries
+                </div>
+            </div>
+            <div class="slide-number">26 / 32</div>
+        </div>
+
+        <!-- Slide 27: SQL AST Difference Distribution -->
+        <div class="slide" data-slide="26">
+            <div class="grid-background"></div>
+            <div class="slide-title">SQL AST Difference Count Distribution</div>
+            <div class="content">
+                <img src="images/ast_difference_distribution.png" alt="SQL AST Difference Count Distribution by Difficulty Level" style="max-width: 90%; max-height: 70vh; margin: 0 auto; display: block; border-radius: 8px; box-shadow: 0 4px 20px rgba(0, 255, 255, 0.3);">
+            </div>
+            <div class="slide-number">27 / 32</div>
+        </div>
+
+        <!-- Slide 28: Error Rate Distribution -->
+        <div class="slide" data-slide="27">
+            <div class="grid-background"></div>
+            <div class="slide-title">Error Rate Distribution</div>
+            <div class="content">
+                <img src="images/error_rate_distribution.png" alt="Error Rate Distribution by Difficulty Level" style="max-width: 90%; max-height: 70vh; margin: 0 auto; display: block; border-radius: 8px; box-shadow: 0 4px 20px rgba(0, 255, 255, 0.3);">
+            </div>
+            <div class="slide-number">28 / 32</div>
+        </div>
+
+        <!-- Slide 29: Retry Distribution -->
+        <div class="slide" data-slide="28">
+            <div class="grid-background"></div>
+            <div class="slide-title">Retry Distribution</div>
+            <div class="content">
+                <img src="images/retry_distribution.png" alt="Retry Distribution by Difficulty Level" style="max-width: 90%; max-height: 70vh; margin: 0 auto; display: block; border-radius: 8px; box-shadow: 0 4px 20px rgba(0, 255, 255, 0.3);">
+            </div>
+            <div class="slide-number">29 / 32</div>
+        </div>
+
+        <!-- Slide 30: Table Recall Average -->
+        <div class="slide" data-slide="29">
+            <div class="grid-background"></div>
+            <div class="slide-title">Table Recall Average</div>
+            <div class="content">
+                <img src="images/table_recall_average.png" alt="Table Recall Average by Difficulty Level" style="max-width: 90%; max-height: 70vh; margin: 0 auto; display: block; border-radius: 8px; box-shadow: 0 4px 20px rgba(0, 255, 255, 0.3);">
+            </div>
+            <div class="slide-number">30 / 32</div>
+        </div>
+
+        <!-- Slide 31: Future Improvements -->
+        <div class="slide" data-slide="30">
+            <div class="grid-background"></div>
+            <div class="slide-title">Roadmap for<br>Enhanced Accuracy</div>
+            <div class="content">
+                <ul class="bullet-list">
+                    <li><strong>Multi-hop Reasoning:</strong> 2-hop FK traversal for complex JOINs</li>
+                    <li><strong>Reranker Integration:</strong> Cross-encoder reranking for table selection</li>
+                    <li><strong>Query Decomposition:</strong> Break complex questions into sub-queries</li>
+                    <li><strong>Dialect Fine-tuning:</strong> Custom T-SQL fine-tuned model</li>
+                    <li><strong>Caching Layer:</strong> LRU cache for common query patterns</li>
+                </ul>
+                <div class="highlight-box">
+                    Target: 95%+ execution success rate across all difficulty levels
+                </div>
+            </div>
+            <div class="slide-number">31 / 32</div>
+        </div>
+
+        <!-- Slide 32: Summary & Q&A -->
+        <div class="slide" data-slide="31">
+            <div class="grid-background"></div>
+            <div class="slide-title">Key Takeaways</div>
+            <div class="content">
+                <ul class="bullet-list">
+                    <li><span class="checkmark">✅</span> RAG-based Schema Linking solves context overflow</li>
+                    <li><span class="checkmark">✅</span> SQL-specialized LLMs outperform general models</li>
+                    <li><span class="checkmark">✅</span> Column-first retrieval improves recall accuracy</li>
+                    <li><span class="checkmark">✅</span> Self-healing loop handles edge cases</li>
+                    <li><span class="checkmark">✅</span> Continuous feedback enables improvement</li>
+                </ul>
+                <div class="stats-grid" style="margin-top: 3rem;">
+                    <div class="stat-card">
+                        <div class="stat-value">96%</div>
+                        <div class="stat-label">Table Recall</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">89%</div>
+                        <div class="stat-label">Execution Success</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">377</div>
+                        <div class="stat-label">Queries Tested</div>
+                    </div>
+                </div>
+                <div class="highlight-box" style="text-align: center; font-size: 2rem; margin-top: 2rem;">
+                    Questions?
+                </div>
+            </div>
+            <div class="slide-number">32 / 32</div>
+        </div>
+    </div>
+
+    <script>
+        let currentSlide = 1;
+        const totalSlides = 32;
+
+        function showSlide(n) {
+            const slides = document.querySelectorAll('.slide');
+            const progress = document.getElementById('progress');
+
+            if (n > totalSlides) { currentSlide = totalSlides; }
+            if (n < 1) { currentSlide = 1; }
+
+            slides.forEach(slide => {
+                slide.classList.remove('active');
+            });
+
+            slides[currentSlide - 1].classList.add('active');
+
+            const progressWidth = (currentSlide / totalSlides) * 100;
+            progress.style.width = progressWidth + '%';
+        }
+
+        function changeSlide(n) {
+            currentSlide += n;
+            showSlide(currentSlide);
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') changeSlide(-1);
+            if (e.key === 'ArrowRight') changeSlide(1);
+        });
+
+        // Initialize
+        showSlide(currentSlide);
+    </script>
+</body>
+</html>
