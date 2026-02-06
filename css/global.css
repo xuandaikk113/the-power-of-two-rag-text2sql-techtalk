@@ -1,0 +1,170 @@
+/* ===========================================
+   GLOBAL STYLES - Shared across all slides
+   =========================================== */
+
+:root {
+    --color-primary: #05668D;
+    --color-secondary: #028090;
+    --color-tertiary: #00A896;
+    --color-accent: #02C39A;
+    --color-dark: #0a1828;
+    --color-darker: #030b14;
+    --color-light: #f0f4f8;
+    --color-error: #ff4757;
+    --font-display: 'Orbitron', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+    --font-body: 'Space Mono', monospace;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-body);
+    background: var(--color-darker);
+    color: var(--color-light);
+    overflow-x: hidden;
+}
+
+/* Presentation container */
+.presentation {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* Base slide styles */
+.slide {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: none;
+    opacity: 0;
+    transition: opacity 0.6s ease;
+    padding: 4rem;
+    background: linear-gradient(135deg, var(--color-darker) 0%, #0d1b2a 50%, var(--color-dark) 100%);
+}
+
+.slide.active {
+    display: flex;
+    flex-direction: column;
+    opacity: 1;
+    animation: slideIn 0.6s ease-out;
+}
+
+/* Grid background - injected via JS */
+.grid-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: 
+        linear-gradient(rgba(2, 195, 154, 0.1) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(2, 195, 154, 0.1) 1px, transparent 1px);
+    background-size: 40px 40px;
+    opacity: 0.3;
+    pointer-events: none;
+}
+
+/* Slide number - generated via JS */
+.slide-number {
+    position: absolute;
+    bottom: 2rem;
+    right: 2rem;
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    color: var(--color-tertiary);
+    opacity: 0.7;
+}
+
+/* Slide title */
+.slide-title {
+    font-family: var(--font-display);
+    font-size: 3rem;
+    font-weight: 900;
+    margin-bottom: 2rem;
+    background: linear-gradient(135deg, var(--color-tertiary), var(--color-accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    line-height: 1.2;
+}
+
+/* Progress indicator */
+.progress-indicator {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--color-tertiary), var(--color-accent));
+    transition: width 0.3s ease;
+    z-index: 1001;
+}
+
+/* Animations */
+@keyframes slideIn {
+    from { transform: translateX(30px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+    to { opacity: 1; }
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.1); opacity: 0.8; }
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+    100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+@keyframes slideRight {
+    0%, 100% { transform: translateX(0); opacity: 1; }
+    50% { transform: translateX(10px); opacity: 0.6; }
+}
+
+@keyframes growBar {
+    from { transform: scaleX(0); }
+    to { transform: scaleX(1); }
+}
+
+@keyframes glow {
+    0%, 100% { text-shadow: 0 0 20px rgba(2, 195, 154, 0.5); }
+    50% { text-shadow: 0 0 40px rgba(2, 195, 154, 0.8), 0 0 60px rgba(2, 195, 154, 0.6); }
+}
+
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .slide-title { font-size: 2rem; }
+    .subtitle { font-size: 1.2rem; }
+    .bullet-list li { font-size: 1.1rem; }
+    .two-column { grid-template-columns: 1fr; }
+    .comparison { grid-template-columns: 1fr; }
+}
