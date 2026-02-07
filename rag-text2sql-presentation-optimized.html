@@ -307,11 +307,11 @@
             <div class="content">
                 <div class="architecture-grid">
                     <div class="arch-component">1. User Query Input</div>
-                    <div class="arch-component">2. Query Enhancement</div>
+                    <div class="arch-component">2. Query Enhancement (Optional)</div>
                     <div class="arch-component">3. Column-First RAG</div>
                     <div class="arch-component">4. Anchor Tables</div>
                     <div class="arch-component">5. Table Expansion</div>
-                    <div class="arch-component">6. Schema Context</div>
+                    <div class="arch-component">6. Schema Context Injection</div>
                     <div class="arch-component">7. SQL Generation</div>
                     <div class="arch-component">8. T-SQL Correction</div>
                     <div class="arch-component">9. Self-Healing</div>
@@ -524,8 +524,51 @@
             </div>
         </div>
 
-        <!-- Slide 16: T-SQL Auto-Correction -->
+        <!-- Slide 16: Token Optimization -->
         <div class="slide" data-slide="16">
+            <div class="slide-title">Token Optimization<br>with Toonify</div>
+            <div class="content">
+                <div class="comparison">
+                    <div class="comparison-side bad">
+                        <div class="comparison-title">BEFORE Toonify (Verbose)</div>
+                        <div class="highlight-box" style="text-align: left; font-size: 0.9rem; padding: 1rem;">
+                            <strong>Instructions:</strong><br>
+                            - Analyze the error message carefully to understand what went wrong.<br>
+                            - Fix the SQL query to address the error.<br>
+                            - Ensure the query is valid MS SQL Server syntax.<br>
+                            - Make sure the query still answers the original question.<br><br>
+                            <strong>SCHEMA/OBJECT ERRORS:</strong><br>
+                            - "Invalid object name 'X'" where X has no dot → Missing schema prefix. Look up the correct schema in the provided schema and use Schema.X<br>
+                            - "Invalid object name 'X'" where X is also a schema name → Table name equals schema name. Use X.X (e.g., Person.Person)<br><br>
+                            <strong>COLUMN ERRORS:</strong><br>
+                            - "Invalid column name 'X'" → Column doesn't exist in that table. Check the schema for the correct column name. Common variations: Quantity/OrderQty/Qty
+                        </div>
+                    </div>
+                    <div class="comparison-side good">
+                        <div class="comparison-title">AFTER Toonify (Compressed)</div>
+                        <div class="highlight-box" style="text-align: left; font-size: 0.9rem; padding: 1rem;">
+                            <strong>EXECUTION_PROTOCOL</strong><br>
+                            1. Diagnose error using table.<br>
+                            2. Cross-reference {db_schema}.<br>
+                            3. Ensure T-SQL compliance.<br>
+                            4. Preserve original intent.<br><br>
+                            <strong>DIAGNOSTICS[Category,Error,Fix]</strong><br>
+                            SCHEMA, "Invalid object 'X'" (no dot), "Use Schema.X"<br>
+                            SCHEMA, "Invalid object 'X'" (X=Schema), "Use X.X"<br>
+                            COLUMN, "Invalid column 'X'", "Check schema for variations"<br>
+                            COLUMN, "Ambiguous column 'X'", "Prefix alias.X"
+                        </div>
+                    </div>
+                </div>
+                <div class="highlight-box">
+                    <span class="checkmark">✅</span> Token Reduction: ~60% fewer tokens via structured formatting<br>
+                    <span class="checkmark">✅</span> Preserved Semantics: All critical information retained
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 17: T-SQL Auto-Correction -->
+        <div class="slide" data-slide="17">
             <div class="slide-title">Enforcing T-SQL<br>Syntax Compliance</div>
             <div class="content">
                 <div class="table-container">
@@ -566,8 +609,8 @@
             </div>
         </div>
 
-        <!-- Slide 17: Self-Healing Loop -->
-        <div class="slide" data-slide="17">
+        <!-- Slide 18: Self-Healing Loop -->
+        <div class="slide" data-slide="18">
             <div class="slide-title">Execute, Diagnose,<br>Heal, Retry</div>
             <div class="content">
                 <div class="flowchart">
@@ -590,8 +633,8 @@
             </div>
         </div>
 
-        <!-- Slide 18: Gold Dataset -->
-        <div class="slide" data-slide="18">
+        <!-- Slide 19: Gold Dataset -->
+        <div class="slide" data-slide="19">
             <div class="slide-title">Building Your<br>Evaluation Gold Standard</div>
             <div class="content">
                 <div class="table-container">
@@ -637,8 +680,8 @@
             </div>
         </div>
 
-        <!-- Slide 19: Basic SQL Dataset Samples -->
-        <div class="slide" data-slide="19">
+        <!-- Slide 20: Basic SQL Dataset Samples -->
+        <div class="slide" data-slide="20">
             <div class="slide-title">Basic SQL<br>Dataset Samples</div>
             <div class="content">
                 <div class="table-container" style="max-height: 500px; overflow-y: auto;">
@@ -707,8 +750,8 @@
             </div>
         </div>
 
-        <!-- Slide 20: Intermediate SQL Dataset Samples -->
-        <div class="slide" data-slide="20">
+        <!-- Slide 21: Intermediate SQL Dataset Samples -->
+        <div class="slide" data-slide="21">
             <div class="slide-title">Intermediate SQL<br>Dataset Samples</div>
             <div class="content">
                 <div class="table-container" style="max-height: 500px; overflow-y: auto;">
@@ -772,8 +815,8 @@
             </div>
         </div>
 
-        <!-- Slide 21: Advanced SQL Dataset Samples -->
-        <div class="slide" data-slide="21">
+        <!-- Slide 22: Advanced SQL Dataset Samples -->
+        <div class="slide" data-slide="22">
             <div class="slide-title">Advanced SQL<br>Dataset Samples</div>
             <div class="content">
                 <div class="table-container" style="max-height: 500px; overflow-y: auto;">
@@ -847,8 +890,8 @@
             </div>
         </div>
 
-        <!-- Slide 22: Future Enhancement -->
-        <div class="slide" data-slide="22">
+        <!-- Slide 23: Future Enhancement -->
+        <div class="slide" data-slide="23">
             <div class="slide-title">Continuous Learning<br>from Expert Feedback</div>
             <div class="content">
                 <div class="flowchart">
@@ -865,8 +908,8 @@
             </div>
         </div>
 
-        <!-- Slide 23: Benchmark Metrics -->
-        <div class="slide" data-slide="23">
+        <!-- Slide 24: Benchmark Metrics -->
+        <div class="slide" data-slide="24">
             <div class="slide-title">Key Metrics for<br>System Evaluation</div>
             <div class="content">
                 <div class="metric-card">
@@ -887,8 +930,8 @@
             </div>
         </div>
 
-        <!-- Slide 24: Additional Evaluation Metrics -->
-        <div class="slide" data-slide="24">
+        <!-- Slide 25: Additional Evaluation Metrics -->
+        <div class="slide" data-slide="25">
             <div class="slide-title">Additional Evaluation<br>Metrics</div>
             <div class="content" style="justify-content: flex-start; margin-top: 1rem; gap: 1rem;">
                 <div class="metric-card" style="padding: 1rem 1.5rem;">
@@ -920,8 +963,8 @@
             </div>
         </div>
 
-        <!-- Slide 25: Benchmark Results -->
-        <div class="slide" data-slide="25">
+        <!-- Slide 26: Benchmark Results -->
+        <div class="slide" data-slide="26">
             <div class="slide-title">System Performance<br>Results</div>
             <div class="content">
                 <div class="stats-grid">
@@ -981,8 +1024,8 @@
             </div>
         </div>
 
-        <!-- Slide 26: RAG Impact Analysis -->
-        <div class="slide" data-slide="26">
+        <!-- Slide 27: RAG Impact Analysis -->
+        <div class="slide" data-slide="27">
             <div class="slide-title">Proving the<br>Value of RAG</div>
             <div class="content">
                 <div class="highlight-box">
@@ -1019,8 +1062,8 @@
             </div>
         </div>
 
-        <!-- Slide 27: Latency Breakdown -->
-        <div class="slide" data-slide="27">
+        <!-- Slide 28: Latency Breakdown -->
+        <div class="slide" data-slide="28">
             <div class="slide-title">Performance &<br>Latency Analysis</div>
             <div class="content">
                 <div class="table-container">
@@ -1069,8 +1112,8 @@
             </div>
         </div>
 
-        <!-- Slide 28: Error Analysis -->
-        <div class="slide" data-slide="28">
+        <!-- Slide 29: Error Analysis -->
+        <div class="slide" data-slide="29">
             <div class="slide-title">Understanding<br>Failure Cases</div>
             <div class="content">
                 <div class="stats-grid">
@@ -1125,8 +1168,8 @@
             </div>
         </div>
 
-        <!-- Slide 29: SQL AST Difference Distribution -->
-        <div class="slide" data-slide="29">
+        <!-- Slide 30: SQL AST Difference Distribution -->
+        <div class="slide" data-slide="30">
             <div class="slide-title">SQL AST Difference Count Distribution</div>
             <div class="content">
                 <img src="images/ast_difference_distribution.png"
@@ -1134,32 +1177,32 @@
             </div>
         </div>
 
-        <!-- Slide 30: Error Rate Distribution -->
-        <div class="slide" data-slide="30">
+        <!-- Slide 31: Error Rate Distribution -->
+        <div class="slide" data-slide="31">
             <div class="slide-title">Error Rate Distribution</div>
             <div class="content">
                 <img src="images/error_rate_distribution.png" alt="Error Rate Distribution by Difficulty Level">
             </div>
         </div>
 
-        <!-- Slide 31: Retry Distribution -->
-        <div class="slide" data-slide="31">
+        <!-- Slide 32: Retry Distribution -->
+        <div class="slide" data-slide="32">
             <div class="slide-title">Retry Distribution</div>
             <div class="content">
                 <img src="images/retry_distribution.png" alt="Retry Distribution by Difficulty Level">
             </div>
         </div>
 
-        <!-- Slide 32: Table Recall Average -->
-        <div class="slide" data-slide="32">
+        <!-- Slide 33: Table Recall Average -->
+        <div class="slide" data-slide="33">
             <div class="slide-title">Table Recall Average</div>
             <div class="content">
                 <img src="images/table_recall_average.png" alt="Table Recall Average by Difficulty Level">
             </div>
         </div>
 
-        <!-- Slide 33: Future Improvements -->
-        <div class="slide" data-slide="33">
+        <!-- Slide 34: Future Improvements -->
+        <div class="slide" data-slide="34">
             <div class="slide-title">Roadmap for<br>Enhanced Accuracy</div>
             <div class="content">
                 <ul class="bullet-list">
@@ -1175,8 +1218,8 @@
             </div>
         </div>
 
-        <!-- Slide 34: Summary -->
-        <div class="slide" data-slide="34">
+        <!-- Slide 35: Summary -->
+        <div class="slide" data-slide="35">
             <div class="slide-title">Key Takeaways</div>
             <div class="content">
                 <ul class="bullet-list">
@@ -1202,8 +1245,8 @@
                 </div>
             </div>
         </div>
-        <!-- Slide 35: Live Demo -->
-        <div class="slide" data-slide="35">
+        <!-- Slide 36: Live Demo -->
+        <div class="slide" data-slide="36">
             <div class="slide-title">Live Demo</div>
             <div class="content">
                 <div class="highlight-box" style="text-align: center; font-size: 3rem; margin-top: 2rem; color: cyan;">
@@ -1211,8 +1254,8 @@
                 </div>
             </div>
         </div>
-        <!-- Slide 36: Q&A -->
-        <div class="slide" data-slide="36">
+        <!-- Slide 37: Q&A -->
+        <div class="slide" data-slide="37">
             <div class="slide-title">Q&A</div>
             <div class="content">
                 <div class="highlight-box" style="text-align: center; font-size: 8rem; margin-top: 2rem; animation: glow 4s ease-in-out infinite;">
@@ -1220,8 +1263,8 @@
                 </div>
             </div>
         </div>
-        <!-- Slide 37: References -->
-        <div class="slide" data-slide="37">
+        <!-- Slide 38: References -->
+        <div class="slide" data-slide="38">
             <div class="slide-title">References</div>
             <div class="content">
                 <ul class="bullet-list">
