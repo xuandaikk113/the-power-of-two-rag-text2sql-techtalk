@@ -66,12 +66,8 @@
     box-shadow: 0 10px 40px rgba(2, 195, 154, 0.3);
 }
 
-/* Slides with chart images */
-.slide[data-slide="7"] img,
-.slide[data-slide="28"] img,
-.slide[data-slide="29"] img,
-.slide[data-slide="30"] img,        
-.slide[data-slide="31"] img {
+/* Slides with images */
+img {
     max-width: 90%;
     max-height: 70vh;
     margin: 0 auto;
