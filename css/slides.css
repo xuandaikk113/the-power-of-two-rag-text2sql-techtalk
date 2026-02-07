@@ -70,7 +70,8 @@
 .slide[data-slide="26"] img,
 .slide[data-slide="27"] img,
 .slide[data-slide="28"] img,
-.slide[data-slide="29"] img {
+.slide[data-slide="29"] img,        
+.slide[data-slide="30"] img {
     max-width: 90%;
     max-height: 70vh;
     margin: 0 auto;

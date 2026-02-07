@@ -254,7 +254,7 @@
                             - PersonID: Unique identifier (PK)<br>
                             - FirstName: Given name<br>
                             - Gender: M=Male, F=Female, U=Unknown<br>
-                            Tags: ["sex", "sexual"]</div>
+                              + Tags: ["sex", "sexual"]</div>
                     </div>
                 </div>
             </div>
@@ -421,10 +421,7 @@
                         <div class="code-block">CREATE TABLE SalesOrder (<br>
                             OrderID INT PRIMARY KEY,<br>
                             OrderDate DATE,<br>
-                            Status VARCHAR(20)<br>
-                            -- Samples: ['Pending',<br>
-                            'Shipped',<br>
-                            'Cancelled']<br>
+                            Status VARCHAR(20), -- Samples: ['Pending','Shipped']<br>
                             );</div>
                     </div>
                 </div>
@@ -974,8 +971,9 @@
                     </table>
                 </div>
                 <div class="highlight-box warning">
-                    ⚠️ Key Observation: Generation dominates latency (self-hosted LLM)<br>
-                    Retrieval + Execution: &lt;200ms | Generation: ~35 seconds
+                    ⚠️ Key Observation:<br>
+                    1. Generation dominates latency (self-hosted LLM)<br>
+                    2. Retrieval + Execution: &lt;200ms | Generation: ~35 seconds
                 </div>
             </div>
         </div>
