@@ -131,33 +131,33 @@
             <div class="content">
                 <ul class="bullet-list">
                     <li>General-purpose models (Llama, Qwen, GPT) excel at chat</li>
-                    <li>SQL generation requires specialized reasoning</li>
+                    <li>SQL generation requires specialized reasoning + RL training</li>
                     <li>Benchmark evidence matters</li>
                 </ul>
                 <div class="chart-container">
                     <div class="bar-chart">
                         <div class="bar-row">
-                            <div class="bar-label">OmniSQL-14B</div>
-                            <div class="bar" style="width: 71.2%;">
-                                <div class="bar-value">71.2%</div>
-                            </div>
-                        </div>
-                        <div class="bar-row">
-                            <div class="bar-label">SQLCoder-8B</div>
-                            <div class="bar" style="width: 68.9%;">
-                                <div class="bar-value">68.9%</div>
-                            </div>
-                        </div>
-                        <div class="bar-row">
-                            <div class="bar-label">GPT-4o</div>
-                            <div class="bar" style="width: 68.4%;">
-                                <div class="bar-value">68.4%</div>
-                            </div>
-                        </div>
-                        <div class="bar-row">
                             <div class="bar-label">Qwen2.5-72B</div>
-                            <div class="bar" style="width: 58.1%;">
-                                <div class="bar-value">58.1%</div>
+                            <div class="bar" style="width: 60.17%;">
+                                <div class="bar-value">60.17%</div>
+                            </div>
+                        </div>
+                        <div class="bar-row">
+                            <div class="bar-label">Llama-3.1-70B</div>
+                            <div class="bar" style="width: 57.37%;">
+                                <div class="bar-value">57.37%</div>
+                            </div>
+                        </div>
+                        <div class="bar-row">
+                            <div class="bar-label">Mistral-Large</div>
+                            <div class="bar" style="width: 53.52%;">
+                                <div class="bar-value">53.52%</div>
+                            </div>
+                        </div>
+                        <div class="bar-row">
+                            <div class="bar-label">Claude-3.5-Sonnet</div>
+                            <div class="bar" style="width: 50.13%;">
+                                <div class="bar-value">50.13%</div>
                             </div>
                         </div>
                     </div>
@@ -175,16 +175,16 @@
             <div class="content">
                 <div class="stats-grid">
                     <div class="stat-card">
-                        <div class="stat-value">71.2%</div>
-                        <div class="stat-label">OmniSQL Bird-SQL</div>
+                        <div class="stat-value">88.3%</div>
+                        <div class="stat-label">OmniSQL-14B Spider</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-value">87.1%</div>
-                        <div class="stat-label">OmniSQL Spider</div>
+                        <div class="stat-value">65.9%</div>
+                        <div class="stat-label">OmniSQL-14B BIRD</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-value">14B</div>
-                        <div class="stat-label">Parameters</div>
+                        <div class="stat-label">Optimal Size</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-value">✓</div>
@@ -195,41 +195,54 @@
                     <table>
                         <thead>
                             <tr>
+                                <th>Rank</th>
                                 <th>Model</th>
                                 <th>Size</th>
-                                <th>Bird-SQL EX</th>
-                                <th>Spider EX</th>
-                                <th>Self-Host</th>
+                                <th>Spider (test)</th>
+                                <th>BIRD (dev)</th>
+                                <th>Average</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
-                                <td>OmniSQL</td>
+                                <td>1</td>
+                                <td>OmniSQL-14B</td>
                                 <td>14B</td>
-                                <td>71.2%</td>
-                                <td>87.1%</td>
-                                <td>✅ Ollama</td>
+                                <td>88.3% (Maj)</td>
+                                <td>65.9% (Maj)</td>
+                                <td>63.9%</td>
                             </tr>
                             <tr>
-                                <td>SQLCoder</td>
-                                <td>8B</td>
-                                <td>68.9%</td>
-                                <td>84.5%</td>
-                                <td>✅ Ollama</td>
+                                <td>2</td>
+                                <td>Qwen2.5-Coder-14B-Instruct</td>
+                                <td>14B</td>
+                                <td>88.0% (Maj)</td>
+                                <td>66.1% (Maj)</td>
+                                <td>61.1%</td>
                             </tr>
                             <tr>
-                                <td>GPT-4o</td>
-                                <td>?</td>
-                                <td>68.4%</td>
-                                <td>85.3%</td>
-                                <td>❌ API</td>
+                                <td>3</td>
+                                <td>Qwen2.5-14B-Instruct</td>
+                                <td>14B</td>
+                                <td>84.0% (Maj)</td>
+                                <td>62.1% (Maj)</td>
+                                <td>57.5%</td>
                             </tr>
                             <tr>
-                                <td>Qwen2.5</td>
-                                <td>72B</td>
-                                <td>58.1%</td>
-                                <td>79.2%</td>
-                                <td>✅ Heavy</td>
+                                <td>4</td>
+                                <td>Starcoder2-15B-Instruct</td>
+                                <td>15B</td>
+                                <td>74.0% (Maj)</td>
+                                <td>42.6% (Maj)</td>
+                                <td>46.8%</td>
+                            </tr>
+                            <tr>
+                                <td>5</td>
+                                <td>DSC-22B-Lite-Instruct (MoE)</td>
+                                <td>22B (MoE)</td>
+                                <td>79.6% (Maj)</td>
+                                <td>51.8% (Maj)</td>
+                                <td>52.7%</td>
                             </tr>
                         </tbody>
                     </table>
@@ -253,7 +266,7 @@
 
         <!-- Slide 8: Benchmark Metrics Explanation -->
         <div class="slide" data-slide="8">
-            <div class="slide-title">Benchmark Metrics<br>Explanation</div>
+            <div class="slide-title">Benchmark Metrics Explanation</div>
             <div class="content">
                 <div class="table-container">
                     <table>
@@ -611,7 +624,7 @@
 
         <!-- Slide 18: Self-Healing Loop -->
         <div class="slide" data-slide="18">
-            <div class="slide-title">Execute, Diagnose,<br>Heal, Retry</div>
+            <div class="slide-title">Execute, Diagnose, Heal, Retry</div>
             <div class="content">
                 <div class="flowchart">
                     <div class="flow-step">Execute SQL against read-only connection</div>
