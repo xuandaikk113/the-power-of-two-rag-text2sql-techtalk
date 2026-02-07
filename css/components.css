@@ -129,6 +129,36 @@
     font-weight: 600;
 }
 
+/* Table of Contents */
+.toc-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    align-items: flex-start;
+}
+
+.toc-item {
+    margin-bottom: 1.8rem;
+    padding: 1.5rem 1.5rem;
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    min-height: 6rem;
+}
+
+.toc-number {
+    font-weight: 700;
+    font-size: 2rem;
+    color: var(--color-accent);
+    min-width: 2.5rem;
+}
+
+.toc-text {
+    font-size: 1.6rem;
+    line-height: 1.4;
+    margin-top: 0.45rem;
+}
+
 /* Tables */
 .table-container {
     background: rgba(5, 102, 141, 0.1);

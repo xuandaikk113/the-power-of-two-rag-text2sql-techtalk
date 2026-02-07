@@ -17,7 +17,7 @@
 .title-slide .slide-title {
     font-size: 5rem;
     margin-bottom: 4rem;
-    animation: glow 6s ease-in-out infinite;
+    animation: glow 4s ease-in-out infinite;
 }
 
 .logo-placeholder {
@@ -67,11 +67,11 @@
 }
 
 /* Slides with chart images */
-.slide[data-slide="26"] img,
-.slide[data-slide="27"] img,
+.slide[data-slide="7"] img,
 .slide[data-slide="28"] img,
-.slide[data-slide="29"] img,        
-.slide[data-slide="30"] img {
+.slide[data-slide="29"] img,
+.slide[data-slide="30"] img,        
+.slide[data-slide="31"] img {
     max-width: 90%;
     max-height: 70vh;
     margin: 0 auto;
